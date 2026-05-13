@@ -3260,8 +3260,16 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.23';
+const APP_VERSION='2.0';
 const CHANGELOG=[
+  {version:'2.0',date:'2026-05-13',items:[
+    'v2 正式版：合併分期功能分支',
+    '信用卡分期記帳：新增期數，統計區顯示分期明細與入帳控制',
+    '月/年可用餘額：全新計算邏輯（收入−浮動−固定−貸款），點擊顯示各項明細',
+    '固定支出統計：無記錄時顯示報表當月預算值',
+    '財務語言新增「月可用餘額」公式說明',
+    '修正：新增表單預設信用卡時正確顯示分期選項',
+  ]},
   {version:'1.23',date:'2026-05-12',items:[
     '移除統計本月收入卡片中的結餘顯示',
   ]},
