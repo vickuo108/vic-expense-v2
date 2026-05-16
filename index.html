@@ -437,10 +437,10 @@ input[type=number]{-moz-appearance:textfield}
         <div class="form-group">
           <label class="form-label">女友分攤</label>
           <div class="split-grid">
-            <button class="split-opt active" data-v="null">👤 我全部</button>
-            <button class="split-opt" data-v="1">👫 各一半</button>
-            <button class="split-opt" data-v="0">👩 全女友</button>
-            <button class="split-opt" data-v="repay">💸 女友已分攤</button>
+            <button class="split-opt active" data-v="null" onmousedown="event.preventDefault()">👤 我全部</button>
+            <button class="split-opt" data-v="1" onmousedown="event.preventDefault()">👫 各一半</button>
+            <button class="split-opt" data-v="0" onmousedown="event.preventDefault()">👩 全女友</button>
+            <button class="split-opt" data-v="repay" onmousedown="event.preventDefault()">💸 女友已分攤</button>
           </div>
           <div class="share-preview" id="share-preview"></div>
         </div>
@@ -1267,6 +1267,9 @@ function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
     const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
     ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
     el.appendChild(gx);
+    const ge=document.createElement('optgroup'); ge.label='電子錢包操作';
+    const oe=document.createElement('option'); oe.value='加值'; oe.textContent='加值'; ge.appendChild(oe);
+    el.appendChild(ge);
     return;
   }
   const g1=document.createElement('optgroup'); g1.label='浮動支出';
@@ -1285,10 +1288,6 @@ function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
   if(grp==='銀行帳戶'){
     const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
     ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
-    el.appendChild(gx);
-  } else if(grp==='電子錢包'){
-    const gx=document.createElement('optgroup'); gx.label='電子錢包操作';
-    const op=document.createElement('option'); op.value='加值'; op.textContent='加值'; gx.appendChild(op);
     el.appendChild(gx);
   }
 }
@@ -1505,8 +1504,10 @@ function resetAddForm(){
   document.getElementById('f-note').value='';
   document.getElementById('f-main').value='';
   fillSelect(document.getElementById('f-sub'),[],'（選填）');
-  document.getElementById('f-install-extra').style.display='none';
-  resetInstall('f');
+  const _curMethod=document.getElementById('f-method').value;
+  const _stillCC=isCCMethod(_curMethod);
+  document.getElementById('f-install-extra').style.display=_stillCC?'flex':'none';
+  if(!_stillCC) resetInstall('f');
   document.getElementById('f-loan-extra').style.display='none';
   document.getElementById('f-loan-p').value='';
   document.getElementById('f-loan-i').value='';
@@ -2237,7 +2238,7 @@ function renderStats(){
   const totalInc=inc.reduce((s,r)=>s+r.amount,0);
   const vicExp=exp.reduce((s,r)=>s+vicShare(r.amount,r.split),0);
   document.getElementById('s-expense').textContent=fmt(Math.abs(totalExp));
-  document.getElementById('s-income').textContent='+'+fmt(totalInc);
+  document.getElementById('s-income').textContent=fmt(totalInc);
   document.getElementById('s-vic-expense').textContent=fmt(Math.abs(vicExp));
   // 可用金額（標記可用的帳戶合計，含被轉入金額）
   const bd=loadAcctBal(); const mg2=loadMG(); const avail2=loadAcctAvail();
@@ -2416,19 +2417,23 @@ function renderBankSection(data, prefix){
     const push=moRecs.filter(r=>r.main==='現金存入').reduce((s,r)=>s+r.amount,0);
     // 其他進出（非現金相關）
     const other=moRecs.filter(r=>r.main!=='提款'&&r.main!=='現金存入').reduce((s,r)=>s+r.amount,0);
+    // 加值扣款：此帳戶作為電子錢包加值來源（main=加值, sub=此帳戶）
+    const moTopup=data.filter(r=>r.date.startsWith(prefix)&&r.main==='加值'&&r.sub===name).reduce((s,r)=>s+r.amount,0);
+    const allTopup=data.filter(r=>r.main==='加值'&&r.sub===name).reduce((s,r)=>s+r.amount,0);
+    const otherNet=other-moTopup;
     const openBal=bal[name]||0;
     const allTx=data.filter(r=>r.method===name).reduce((s,r)=>s+r.amount,0);
     // 被轉入：其他帳戶以轉帳方式轉進此帳戶（main=轉帳, sub=此帳戶）
     const incoming=data.filter(r=>r.main==='轉帳'&&r.sub===name).reduce((s,r)=>s-r.amount,0);
-    const balance=openBal+allTx+incoming;
+    const balance=openBal+allTx+incoming-allTopup;
     const isAvail=avail[name]||false;
-    tPull+=pull; tPush+=push; tOther+=other; tBal+=balance;
+    tPull+=pull; tPush+=push; tOther+=otherNet; tBal+=balance;
     if(isAvail) tAvail+=balance;
     return `<tr>
       <td>${name}</td>
       <td>${pull?nc(pull):'-'}</td>
       <td>${push?nc(push):'-'}</td>
-      <td>${other?nc(other):'-'}</td>
+      <td>${otherNet?nc(otherNet):'-'}</td>
       <td>${fmt(balance)}</td>
       <td>${isAvail?`<span class="clr-income">${fmt(balance)}</span>`:'-'}</td>
     </tr>`;
@@ -3258,8 +3263,18 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.1';
+const APP_VERSION='2.3';
 const CHANGELOG=[
+  {version:'2.3',date:'2026-05-17',items:[
+    '統計本月收入卡片移除正號',
+  ]},
+  {version:'2.2',date:'2026-05-17',items:[
+    '內部轉帳新增「電子錢包操作（加值）」主類別',
+    '費用類型移除「加值」選項，電子錢包加值改歸內部轉帳',
+    '加值記帳：統計中來源銀行帳戶自動扣除對應金額，電子錢包帳戶自動增加',
+    '修正：新增記錄後付款方式仍為信用卡時，分期選項持續顯示',
+    '修正：點擊女友分攤按鈕不再收起鍵盤',
+  ]},
   {version:'2.1',date:'2026-05-14',items:[
     '分期按鈕點擊時不再收起鍵盤',
     '記錄列表正數金額移除加號，保留綠色顯示',
