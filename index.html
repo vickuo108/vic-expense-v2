@@ -160,12 +160,11 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .loan-table .total-row td{background:#F1F5F9;font-weight:700;border-top:2px solid #D1D5DB;border-bottom:none}
 .rep-month-btn{flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:11px;cursor:pointer;white-space:nowrap;color:#374151}
 .rep-month-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.report-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
-.report-table th,.report-table td{padding:7px 8px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.report-table th:first-child,.report-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;font-size:11px}
-.rep-thead-table thead th{background:#F8FAFC;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB}
-.rep-thead-table thead th:first-child{background:#F8FAFC;z-index:2}
-#rep-thead-scroll::-webkit-scrollbar{display:none}
+.report-table{width:100%;border-collapse:collapse;font-size:12px;min-width:320px}
+.report-table th,.report-table td{padding:7px 8px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
+.report-table th:first-child,.report-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:80px;font-size:11px}
+.report-table thead th{background:#F8FAFC;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB;position:sticky;top:0;z-index:3}
+.report-table thead th:first-child{background:#F8FAFC;z-index:4}
 .report-table .rep-grp td{background:var(--primary-tint);font-weight:700;color:var(--primary-deep);font-size:13px;padding:8px 8px;border-top:2px solid var(--primary-border)}
 .report-table .rep-grp td:first-child{position:sticky;left:0;z-index:2;background:var(--primary-tint);box-shadow:9999px 0 0 9999px var(--primary-tint);border-left:3px solid var(--primary)}
 .report-table tbody tr:not(.rep-grp):not(.rep-tot):not(.rep-net) td{background:#F8FAFC}
@@ -767,27 +766,14 @@ input[type=number]{-moz-appearance:textfield}
         <div id="rep-copy-btn-wrap" style="display:none;margin-bottom:4px">
           <button onclick="copyLastMonthBudget()" style="padding:7px 14px;border:1.5px solid #CBD5E1;border-radius:8px;background:#fff;font-size:12px;color:#374151;cursor:pointer">📋 帶入上月預估</button>
         </div>
-        <!-- 年度報表表頭（凍結在此，與 tbody 同步橫向捲動） -->
-        <div id="rep-thead-scroll" style="overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none">
-          <table class="report-table rep-thead-table">
-            <colgroup>
-              <col style="width:90px"><col style="width:68px"><col style="width:72px">
-              <col style="width:72px"><col style="width:62px"><col style="width:64px"><col style="width:64px">
-            </colgroup>
-            <thead><tr>
-              <th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>收入佔比</th><th>各項佔比</th>
-            </tr></thead>
-          </table>
-        </div>
       </div>
       <!-- 年度報表 -->
       <div id="rep-view-year">
-        <div id="rep-tbody-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-          <table class="report-table rep-tbody-table">
-            <colgroup>
-              <col style="width:90px"><col style="width:68px"><col style="width:72px">
-              <col style="width:72px"><col style="width:62px"><col style="width:64px"><col style="width:64px">
-            </colgroup>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="report-table">
+            <thead><tr>
+              <th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>收入佔比</th><th>各項佔比</th>
+            </tr></thead>
             <tbody id="report-tbody"></tbody>
           </table>
         </div>
@@ -1944,7 +1930,7 @@ function initReportNav(){
   const sel=document.getElementById('rep-month-selector');
   const labels=['年度','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   sel.innerHTML=labels.map((l,i)=>`<button class="rep-month-btn${i===0?' active':''}" data-m="${i}" onclick="selectReportMonth(this)">${l}</button>`).join('');
-  initRepScrollSync();
+  adjustReportThead();
 }
 
 function selectReportMonth(btn){
@@ -1961,7 +1947,6 @@ function setRepView(v, btn){
   document.getElementById('rep-view-year').style.display=v==='year'?'':'none';
   document.getElementById('rep-view-qm').style.display=v==='qm'?'':'none';
   document.getElementById('rep-month-selector').style.display=v==='year'?'flex':'none';
-  document.getElementById('rep-thead-scroll').style.display=v==='year'?'':'none';
   renderFinReport();
 }
 
@@ -2092,15 +2077,16 @@ function renderFinReport(){
   html+=`<tr class="rep-net"><td>淨利率</td><td>${netRateB}</td><td>${netRateA}</td><td></td><td></td><td></td><td></td></tr>`;
 
   document.getElementById('report-tbody').innerHTML=html;
+  adjustReportThead();
 }
 
-function initRepScrollSync(){
-  const hScroll=document.getElementById('rep-thead-scroll');
-  const bScroll=document.getElementById('rep-tbody-scroll');
-  if(!hScroll||!bScroll) return;
-  let syncing=false;
-  hScroll.addEventListener('scroll',()=>{if(!syncing){syncing=true;bScroll.scrollLeft=hScroll.scrollLeft;syncing=false;}});
-  bScroll.addEventListener('scroll',()=>{if(!syncing){syncing=true;hScroll.scrollLeft=bScroll.scrollLeft;syncing=false;}});
+function adjustReportThead(){
+  requestAnimationFrame(()=>{
+    const ctrl=document.getElementById('rep-sticky-controls');
+    if(!ctrl) return;
+    const h=ctrl.getBoundingClientRect().height;
+    document.querySelectorAll('.report-table thead th').forEach(th=>{ th.style.top=h+'px'; });
+  });
 }
 
 function renderQMReport(){
