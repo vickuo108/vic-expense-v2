@@ -3358,8 +3358,13 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 const CHANGELOG=[
+  {version:'2.9',date:'2026-05-18',items:[
+    '報表版面改用 flex 布局，徹底修正資料不顯示的問題',
+    '報表導覽列凍結於上方，表格區域獨立捲動',
+    '表頭列固定於表格頂部，左右滑動正常同步',
+  ]},
   {version:'2.8',date:'2026-05-18',items:[
     '修正報表資料消失的問題',
     '報表表頭凍結改用更穩定的方式實作',
