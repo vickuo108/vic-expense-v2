@@ -160,7 +160,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .loan-table .total-row td{background:#F1F5F9;font-weight:700;border-top:2px solid #D1D5DB;border-bottom:none}
 .rep-month-btn{flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:11px;cursor:pointer;white-space:nowrap;color:#374151}
 .rep-month-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.report-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:320px}
+.report-table{width:100%;border-collapse:collapse;font-size:12px;min-width:320px}
 .report-table th,.report-table td{padding:7px 8px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .report-table th:first-child,.report-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:80px;font-size:11px}
 .report-table thead th{background:#F8FAFC;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB;position:sticky;top:0;z-index:3}
@@ -173,7 +173,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .report-table .rep-net td{background:#EFF6FF;font-weight:700;color:#1D4ED8;border-top:2px solid #BFDBFE}
 .rep-view-toggle{display:flex;gap:6px;margin-bottom:10px}
 #panel-report.active{display:flex!important;flex-direction:column}
-#rep-view-year,#rep-view-qm{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+#rep-view-year,#rep-view-qm{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0}
 .rep-view-btn{flex:1;padding:7px 0;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:#374151}
 .rep-view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .qm-table{border-collapse:collapse;font-size:11px;min-width:720px;width:100%}
@@ -771,37 +771,33 @@ input[type=number]{-moz-appearance:textfield}
       </div>
       <!-- 年度報表 -->
       <div id="rep-view-year">
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-          <table class="report-table">
-            <thead><tr>
-              <th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>收入佔比</th><th>各項佔比</th>
-            </tr></thead>
-            <tbody id="report-tbody"></tbody>
-          </table>
-        </div>
+        <table class="report-table">
+          <thead><tr>
+            <th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>收入佔比</th><th>各項佔比</th>
+          </tr></thead>
+          <tbody id="report-tbody"></tbody>
+        </table>
       </div>
       <!-- 季&月報表 -->
       <div id="rep-view-qm" style="display:none">
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-          <table class="qm-table">
-            <thead>
-              <tr>
-                <th rowspan="2">月份</th>
-                <th colspan="5" class="qm-grp-h">收入</th>
-                <th colspan="5" class="qm-grp-h">成本</th>
-                <th colspan="5" class="qm-grp-h">費用</th>
-                <th colspan="5" class="qm-grp-h">淨利</th>
-              </tr>
-              <tr>
-                <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
-                <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
-                <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
-                <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
-              </tr>
-            </thead>
-            <tbody id="qm-tbody"></tbody>
-          </table>
-        </div>
+        <table class="qm-table">
+          <thead>
+            <tr>
+              <th rowspan="2">月份</th>
+              <th colspan="5" class="qm-grp-h">收入</th>
+              <th colspan="5" class="qm-grp-h">成本</th>
+              <th colspan="5" class="qm-grp-h">費用</th>
+              <th colspan="5" class="qm-grp-h">淨利</th>
+            </tr>
+            <tr>
+              <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
+              <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
+              <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
+              <th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>MOM/QOQ</th>
+            </tr>
+          </thead>
+          <tbody id="qm-tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
