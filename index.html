@@ -160,7 +160,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .loan-table .total-row td{background:#F1F5F9;font-weight:700;border-top:2px solid #D1D5DB;border-bottom:none}
 .rep-month-btn{flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:11px;cursor:pointer;white-space:nowrap;color:#374151}
 .rep-month-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.report-table{width:100%;border-collapse:collapse;font-size:12px;min-width:320px}
+.report-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:320px}
 .report-table th,.report-table td{padding:7px 8px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .report-table th:first-child,.report-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:80px;font-size:11px}
 .report-table thead th{background:#F8FAFC;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB;position:sticky;top:0;z-index:3}
@@ -173,7 +173,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .report-table .rep-net td{background:#EFF6FF;font-weight:700;color:#1D4ED8;border-top:2px solid #BFDBFE}
 .rep-view-toggle{display:flex;gap:6px;margin-bottom:10px}
 #panel-report.active{display:flex!important;flex-direction:column}
-#rep-view-year,#rep-view-qm{flex:1;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:0}
+#rep-view-year,#rep-view-qm{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
 .rep-view-btn{flex:1;padding:7px 0;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:#374151}
 .rep-view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .qm-table{border-collapse:collapse;font-size:11px;min-width:720px;width:100%}
@@ -3369,8 +3369,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.9';
+const APP_VERSION='2.10';
 const CHANGELOG=[
+  {version:'2.10',date:'2026-05-18',items:[
+    '報表表頭列（項目／預估／實際等）正式凍結，捲動時固定於頂部',
+    '修正 iOS Safari 上 sticky 表頭失效的問題（border-collapse 調整）',
+  ]},
   {version:'2.9',date:'2026-05-18',items:[
     '報表版面改用 flex 布局，徹底修正資料不顯示的問題',
     '報表導覽列凍結於上方，表格區域獨立捲動',
