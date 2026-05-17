@@ -3365,8 +3365,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.10';
+const APP_VERSION='2.11';
 const CHANGELOG=[
+  {version:'2.11',date:'2026-05-18',items:[
+    '修正報表資料消失的問題（移除內層 overflow div，改由容器直接處理捲動）',
+    '表頭列（項目／預估／實際等）垂直凍結正式生效',
+  ]},
   {version:'2.10',date:'2026-05-18',items:[
     '報表表頭列（項目／預估／實際等）正式凍結，捲動時固定於頂部',
     '修正 iOS Safari 上 sticky 表頭失效的問題（border-collapse 調整）',
