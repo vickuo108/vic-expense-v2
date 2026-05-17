@@ -42,7 +42,9 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .amount-wrap{position:relative}
 .amount-currency{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9BA3AF;font-size:15px;pointer-events:none}
 .amount-wrap .form-control{padding-left:28px}
-.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.split-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.split-grid .split-opt:nth-child(-n+3){grid-column:span 2}
+.split-grid .split-opt:nth-child(n+4){grid-column:span 3}
 .split-opt{padding:9px 6px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;text-align:center;transition:all .2s;line-height:1.3}
 .split-opt small{display:block;font-size:10px;color:#9BA3AF;margin-top:2px}
 .split-opt.active{border-width:2px}
@@ -50,6 +52,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .split-opt[data-v="1"].active{background:#FFFBEB;border-color:#F59F00;color:#B45309}
 .split-opt[data-v="0"].active{background:#FFF1F2;border-color:#F43F5E;color:#BE123C}
 .split-opt[data-v="repay"].active{background:#DCFCE7;border-color:#16A34A;color:#15803D}
+.split-opt[data-v="custom"].active{background:#F5F3FF;border-color:#7C3AED;color:#7C3AED}
 .share-preview{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 13px;font-size:13px;color:#1D4ED8;margin-top:8px;display:none}
 .share-preview.show{display:block}
 .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;box-shadow:0 4px 12px var(--primary-s35)}
@@ -440,7 +443,13 @@ input[type=number]{-moz-appearance:textfield}
             <button class="split-opt active" data-v="null" onmousedown="event.preventDefault()">👤 我全部</button>
             <button class="split-opt" data-v="1" onmousedown="event.preventDefault()">👫 各一半</button>
             <button class="split-opt" data-v="0" onmousedown="event.preventDefault()">👩 全女友</button>
+            <button class="split-opt" data-v="custom" onmousedown="event.preventDefault()">🔢 自訂比例</button>
             <button class="split-opt" data-v="repay" onmousedown="event.preventDefault()">💸 女友已分攤</button>
+          </div>
+          <div id="f-custom-wrap" style="display:none;align-items:center;gap:8px;margin-top:6px">
+            <span style="font-size:13px;color:#6B7280">女友比例</span>
+            <input type="number" class="form-control" id="f-custom-pct" placeholder="0~100" min="0" max="100" step="1" style="width:80px">
+            <span style="font-size:13px;color:#6B7280">%</span>
           </div>
           <div class="share-preview" id="share-preview"></div>
         </div>
@@ -904,7 +913,13 @@ input[type=number]{-moz-appearance:textfield}
         <button class="split-opt" data-v="null" onclick="editSelectSplit(this)">👤 我全部</button>
         <button class="split-opt" data-v="1" onclick="editSelectSplit(this)">👫 各一半</button>
         <button class="split-opt" data-v="0" onclick="editSelectSplit(this)">👩 全女友</button>
+        <button class="split-opt" data-v="custom" onclick="editSelectSplit(this)">🔢 自訂比例</button>
         <button class="split-opt" data-v="repay" onclick="editSelectSplit(this)">💸 女友已分攤</button>
+      </div>
+      <div id="e-custom-wrap" style="display:none;align-items:center;gap:8px;margin-top:6px">
+        <span style="font-size:13px;color:#6B7280">女友比例</span>
+        <input type="number" class="form-control" id="e-custom-pct" placeholder="0~100" min="0" max="100" step="1" style="width:80px" oninput="editCustomPctChanged()">
+        <span style="font-size:13px;color:#6B7280">%</span>
       </div>
     </div>
     <div class="modal-actions">
@@ -1102,11 +1117,13 @@ function vicShare(amount, split){
   if(split==='repay') return amount;
   if(split===0) return 0;
   if(split===1) return amount/2;
+  if(typeof split==='number'&&split>0&&split<1) return amount*split;
   return amount;
 }
 function gfOwes(amount, split){
   if(split===0) return Math.abs(amount);
   if(split===1) return Math.abs(amount)/2;
+  if(typeof split==='number'&&split>0&&split<1) return Math.abs(amount)*(1-split);
   return 0;
 }
 function gfRepaid(amount, split){
@@ -1379,11 +1396,34 @@ function initFormListeners(){
 
   document.querySelectorAll('#panel-add .split-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      document.querySelectorAll('#panel-add .split-opt').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      addSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
+      const fWrap=document.getElementById('f-custom-wrap');
+      if(btn.dataset.v==='custom'){
+        const alreadyActive=btn.classList.contains('active');
+        if(alreadyActive){
+          // 收回：切回「我全部」
+          btn.classList.remove('active');
+          document.querySelector('#panel-add .split-opt[data-v="null"]').classList.add('active');
+          fWrap.style.display='none';
+          addSplit=null;
+        } else {
+          document.querySelectorAll('#panel-add .split-opt').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          fWrap.style.display='flex';
+          const pct=parseFloat(document.getElementById('f-custom-pct').value);
+          addSplit=(!isNaN(pct)&&pct>=0&&pct<=100)?(1-pct/100):null;
+        }
+      } else {
+        document.querySelectorAll('#panel-add .split-opt').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        fWrap.style.display='none';
+        addSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
+      }
       updateSharePreview();
     });
+  });
+  document.getElementById('f-custom-pct').addEventListener('input',()=>{
+    const pct=parseFloat(document.getElementById('f-custom-pct').value);
+    if(!isNaN(pct)&&pct>=0&&pct<=100){ addSplit=1-pct/100; updateSharePreview(); }
   });
 
   document.getElementById('f-method').addEventListener('change',()=>{
@@ -1444,9 +1484,7 @@ function updateSharePreview(){
   } else {
     prev.style.cssText='';
     const vic=vicShare(amt,addSplit), gf=gfOwes(amt,addSplit);
-    prev.textContent=addSplit===1
-      ?`Vic 實際支出：${fmt(Math.abs(vic))}　女友應還：${fmt(gf)}`
-      :`Vic 實際支出：$0　女友應還全額：${fmt(gf)}`;
+    prev.textContent=`Vic 實際支出：${fmt(Math.abs(vic))}　女友應還：${fmt(gf)}`;
   }
 }
 
@@ -1514,6 +1552,8 @@ function resetAddForm(){
   addSplit=null;
   document.querySelectorAll('#panel-add .split-opt').forEach(b=>b.classList.remove('active'));
   document.querySelector('#panel-add .split-opt[data-v="null"]').classList.add('active');
+  document.getElementById('f-custom-wrap').style.display='none';
+  document.getElementById('f-custom-pct').value='';
   document.getElementById('share-preview').classList.remove('show');
 }
 
@@ -1581,7 +1621,7 @@ function renderRecords(){
     const exp=filtered.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
     const inc=filtered.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
     const parts=[`共 ${filtered.length} 筆`,`總計 ${amtStr(total)}`];
-    if(inc) parts.push(`收入 +${fmt(inc)}`);
+    if(inc) parts.push(`收入 ${fmt(inc)}`);
     if(exp) parts.push(`支出 ${fmt(Math.abs(exp))}`);
     sumEl.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');
     sumEl.style.display='flex';
@@ -1638,6 +1678,7 @@ function txItemHTML(r){
   const vicStr=r.split!==null&&r.split!=='repay'?`Vic: ${vc>0?'+':''}${fmt(Math.abs(vc))}`:'';
   const splitBadge=r.split===0?'<span class="badge badge-gf">全女友</span>'
     :r.split===1?'<span class="badge badge-half">各半</span>'
+    :(typeof r.split==='number'&&r.split>0&&r.split<1)?`<span class="badge" style="background:#F5F3FF;color:#7C3AED">女${Math.round((1-r.split)*100)}%</span>`
     :r.split==='repay'?'<span class="badge badge-repay">女友還款</span>':'';
   const installBadge=r.installments>1?`<span class="badge badge-install">分${r.installments}期</span>`:'';
   const badge=splitBadge+installBadge;
@@ -1786,15 +1827,33 @@ function openEdit(id){
   document.getElementById('e-loan-p').value=r.loanPrincipal?fmtInput(r.loanPrincipal):'';
   document.getElementById('e-loan-i').value=r.loanInterest?fmtInput(r.loanInterest):'';
   editSplit=r.split;
-  const sv=r.split===null?'null':r.split==='repay'?'repay':String(r.split);
+  const isCustomSplit=typeof r.split==='number'&&r.split>0&&r.split<1;
+  const sv=r.split===null?'null':r.split==='repay'?'repay':isCustomSplit?'custom':String(r.split);
   document.querySelectorAll('#edit-overlay .split-opt').forEach(b=>b.classList.toggle('active',b.dataset.v===sv));
+  const eWrap=document.getElementById('e-custom-wrap');
+  if(isCustomSplit){
+    eWrap.style.display='flex';
+    document.getElementById('e-custom-pct').value=Math.round((1-r.split)*100);
+  } else { eWrap.style.display='none'; }
   document.getElementById('edit-overlay').classList.add('open');
 }
 
 function editSelectSplit(btn){
   document.querySelectorAll('#edit-overlay .split-opt').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  editSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
+  const eWrap=document.getElementById('e-custom-wrap');
+  if(btn.dataset.v==='custom'){
+    eWrap.style.display='flex';
+    const pct=parseFloat(document.getElementById('e-custom-pct').value);
+    editSplit=(!isNaN(pct)&&pct>=0&&pct<=100)?(1-pct/100):null;
+  } else {
+    eWrap.style.display='none';
+    editSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
+  }
+}
+function editCustomPctChanged(){
+  const pct=parseFloat(document.getElementById('e-custom-pct').value);
+  if(!isNaN(pct)&&pct>=0&&pct<=100) editSplit=1-pct/100;
 }
 
 function closeModal(){ document.getElementById('edit-overlay').classList.remove('open'); currentEditId=null; }
@@ -2443,9 +2502,10 @@ function renderBankSection(data, prefix){
 }
 
 function renderGFSummary(data, prefix){
-  const mo=data.filter(r=>r.date.startsWith(prefix)&&(r.split===0||r.split===1)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
+  const hasGfShare=r=>typeof r.split==='number'&&gfOwes(r.amount,r.split)>0;
+  const mo=data.filter(r=>r.date.startsWith(prefix)&&hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
   const mr=data.filter(r=>r.date.startsWith(prefix)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
-  const ao=data.filter(r=>(r.split===0||r.split===1)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
+  const ao=data.filter(r=>hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
   const ar=data.filter(r=>r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
   document.getElementById('gf-rows').innerHTML=`
     <div class="gf-row"><span class="gf-key">本月應還</span><span class="gf-val">$${fmt(mo)}</span></div>
@@ -3263,8 +3323,15 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 const CHANGELOG=[
+  {version:'2.5',date:'2026-05-17',items:[
+    '女友分攤新增自訂比例，可指定女友負擔百分比',
+    '自訂比例再次點擊可收回輸入框',
+    '自訂比例正確計入統計女友應還款項',
+    '記錄頂部收入移除正號',
+    '分攤按鈕改為兩行排版（3＋2）',
+  ]},
   {version:'2.4',date:'2026-05-17',items:[
     '記錄列表頂部合計移除正號',
     '月/年可用餘額移除負號（顏色區分正負）',
