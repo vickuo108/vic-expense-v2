@@ -1917,9 +1917,11 @@ function initStatNav(){
 function fixReportPanelHeight(){
   const panel=document.getElementById('panel-report');
   const content=document.getElementById('main-content');
+  const nav=document.querySelector('.bottom-nav');
   if(!panel||!content) return;
   const cs=getComputedStyle(content);
-  const h=content.clientHeight-parseFloat(cs.paddingTop||0)-parseFloat(cs.paddingBottom||0);
+  const navH=nav?.offsetHeight||0;
+  const h=content.clientHeight-parseFloat(cs.paddingTop||0)-parseFloat(cs.paddingBottom||0)-navH;
   panel.style.height=Math.max(h,200)+'px';
 }
 window.addEventListener('resize',()=>{
@@ -2636,7 +2638,7 @@ function renderIncomeSection(data, prefix){
 function renderEWalletSection(data, prefix){
   const mg=loadMG(); const ewallets=mg['電子錢包']||[]; const bal=loadAcctBal();
   let tFlow=0, tBal=0;
-  const nc=n=>n>0?`<span class="clr-income">+${fmt(n)}</span>`:n<0?`<span class="clr-expense">${fmt(n)}</span>`:'';
+  const nc=n=>n>0?`<span class="clr-income">${fmt(n)}</span>`:n<0?`<span class="clr-expense">${fmt(n)}</span>`:'';
   const rows=ewallets.map(name=>{
     const flow=data.filter(r=>r.date.startsWith(prefix)&&r.method===name).reduce((s,r)=>s+r.amount,0);
     const balance=(bal[name]||0)+data.filter(r=>r.method===name).reduce((s,r)=>s+r.amount,0);
@@ -3367,8 +3369,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.13';
+const APP_VERSION='2.14';
 const CHANGELOG=[
+  {version:'2.14',date:'2026-05-18',items:[
+    '修正報表最底下內容被底部導覽列遮住的問題',
+    '電子錢包進出金額正數改為綠色顯示，並移除加號',
+  ]},
   {version:'2.13',date:'2026-05-18',items:[
     '移除報表頁橫向捲軸下方多餘留白',
   ]},
