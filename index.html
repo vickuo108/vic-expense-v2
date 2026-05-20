@@ -382,7 +382,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="card">
         <div class="form-group">
           <label class="form-label">日期</label>
-          <input type="date" class="form-control" id="f-date">
+          <input type="date" class="form-control" id="f-date" min="1000-01-01" max="9999-12-31">
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -426,14 +426,14 @@ input[type=number]{-moz-appearance:textfield}
         <div id="f-loan-extra" style="display:none">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">還本金（選填）</label>
+              <label class="form-label">還本金（必填）</label>
               <div class="amount-wrap">
                 <span class="amount-currency">$</span>
                 <input type="text" inputmode="decimal" class="form-control" id="f-loan-p" placeholder="-14,631">
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">繳利息（自動算）</label>
+              <label class="form-label">利息（自動算）</label>
               <div class="amount-wrap">
                 <span class="amount-currency">$</span>
                 <input type="text" class="form-control" id="f-loan-i" placeholder="自動" readonly style="background:#F9FAFB;color:#9BA3AF">
@@ -488,8 +488,8 @@ input[type=number]{-moz-appearance:textfield}
           <button class="split-pill" data-val="repay">女友還款</button>
         </div>
         <div class="filter-row">
-          <input type="date" class="filter-select" id="filter-from" style="font-size:13px">
-          <input type="date" class="filter-select" id="filter-to" style="font-size:13px">
+          <input type="date" class="filter-select" id="filter-from" min="1000-01-01" max="9999-12-31" style="font-size:13px">
+          <input type="date" class="filter-select" id="filter-to" min="1000-01-01" max="9999-12-31" style="font-size:13px">
         </div>
       </div>
       <div id="records-summary" class="records-summary" style="display:none"></div>
@@ -590,7 +590,7 @@ input[type=number]{-moz-appearance:textfield}
         <div style="overflow-x:auto">
           <table class="loan-table">
             <thead><tr>
-              <th>項目</th><th>本月提款</th><th>本月存錢</th><th>其他進出</th><th>帳戶餘額</th><th>可用餘額</th>
+              <th>項目</th><th>提款/存錢</th><th>其他進出</th><th>帳戶餘額</th><th>可用餘額</th>
             </tr></thead>
             <tbody id="bank-table-body"></tbody>
           </table>
@@ -853,7 +853,7 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="form-group">
       <label class="form-label">日期</label>
-      <input type="date" class="form-control" id="e-date">
+      <input type="date" class="form-control" id="e-date" min="1000-01-01" max="9999-12-31">
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -897,14 +897,14 @@ input[type=number]{-moz-appearance:textfield}
     <div id="e-loan-extra" style="display:none">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">還本金（選填）</label>
+          <label class="form-label">還本金（必填）</label>
           <div class="amount-wrap">
             <span class="amount-currency">$</span>
             <input type="text" inputmode="decimal" class="form-control" id="e-loan-p">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">繳利息（自動算）</label>
+          <label class="form-label">利息（自動算）</label>
           <div class="amount-wrap">
             <span class="amount-currency">$</span>
             <input type="text" class="form-control" id="e-loan-i" readonly style="background:#F9FAFB;color:#9BA3AF">
@@ -1518,6 +1518,10 @@ function initFormListeners(){
     if(!isCC) resetInstall('f');
   });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
+  document.getElementById('panel-add').addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.isComposing||e.target.closest('button')) return;
+    e.preventDefault(); submitAdd();
+  });
   attachAmtFormat('f-amount');
   attachAmtFormat('f-loan-p');
   // 事件綁定完成後，主動對當前付款方式做一次 CC 判斷
@@ -1576,7 +1580,7 @@ function resetInstall(prefix){
 function submitAdd(){
   const date=document.getElementById('f-date').value;
   const amount=parseAmt(document.getElementById('f-amount').value);
-  if(!date){ showToast('請填寫日期'); return; }
+  if(!requireValidDate('f-date')) return;
   if(!amount){ showToast('請填寫金額'); return; }
   const rec={
     id:genId(), date,
@@ -1588,8 +1592,8 @@ function submitAdd(){
   };
   const main=document.getElementById('f-main').value;
   if(main==='貸款'){
-    const p=parseFloat(document.getElementById('f-loan-p').value);
-    const i=parseFloat(document.getElementById('f-loan-i').value);
+    const p=parseAmt(document.getElementById('f-loan-p').value);
+    const i=parseAmt(document.getElementById('f-loan-i').value);
     if(!isNaN(p)) rec.loanPrincipal=p;
     if(!isNaN(i)) rec.loanInterest=i;
   }
@@ -1939,6 +1943,7 @@ function closeModal(){ document.getElementById('edit-overlay').classList.remove(
 
 function saveEdit(){
   if(!currentEditId) return;
+  if(!requireValidDate('e-date')) return;
   const data=loadRecords(); const idx=data.findIndex(x=>x.id===currentEditId);
   if(idx<0) return;
   const main=document.getElementById('e-main').value;
@@ -1955,8 +1960,8 @@ function saveEdit(){
     if(n>=2) updated.installments=n; else delete updated.installments;
   } else { delete updated.installments; }
   if(main==='貸款'){
-    const p=parseFloat(document.getElementById('e-loan-p').value);
-    const i=parseFloat(document.getElementById('e-loan-i').value);
+    const p=parseAmt(document.getElementById('e-loan-p').value);
+    const i=parseAmt(document.getElementById('e-loan-i').value);
     if(!isNaN(p)) updated.loanPrincipal=p; else delete updated.loanPrincipal;
     if(!isNaN(i)) updated.loanInterest=i; else delete updated.loanInterest;
   } else { delete updated.loanPrincipal; delete updated.loanInterest; }
@@ -2577,7 +2582,7 @@ function renderBankSection(data, prefix){
   const mg=loadMG();
   const bankAccts=mg['銀行帳戶']||[];
   const bal=loadAcctBal(); const avail=loadAcctAvail();
-  let tPull=0,tPush=0,tOther=0,tBal=0,tAvail=0;
+  let tCashNet=0,tOther=0,tBal=0,tAvail=0;
   const nc=n=>n===0?'-':`<span class="${n<0?'clr-expense':n>0?'clr-income':''}">${fmt(n)}</span>`;
   const rows=bankAccts.map(name=>{
     const moRecs=data.filter(r=>r.method===name&&r.date.startsWith(prefix));
@@ -2599,18 +2604,18 @@ function renderBankSection(data, prefix){
     const incoming=data.filter(r=>r.main==='轉帳'&&r.sub===name).reduce((s,r)=>s-r.amount,0);
     const balance=openBal+allTx+incoming-allTopup;
     const isAvail=avail[name]||false;
-    tPull+=pull; tPush+=push; tOther+=otherNet; tBal+=balance;
+    const cashNet=pull+push;
+    tCashNet+=cashNet; tOther+=otherNet; tBal+=balance;
     if(isAvail) tAvail+=balance;
     return `<tr>
       <td>${name}</td>
-      <td>${pull?nc(pull):'-'}</td>
-      <td>${push?nc(push):'-'}</td>
+      <td>${cashNet?nc(cashNet):'-'}</td>
       <td>${otherNet?nc(otherNet):'-'}</td>
       <td>${fmt(balance)}</td>
       <td>${isAvail?`<span class="clr-income">${fmt(balance)}</span>`:'-'}</td>
     </tr>`;
   }).join('');
-  const total=`<tr class="total-row"><td>銀行區合計</td><td>${tPull?`<span class="clr-expense">${fmt(tPull)}</span>`:'-'}</td><td>${tPush?nc(tPush):'-'}</td><td>${nc(tOther)}</td><td>${fmt(tBal)}</td><td>${tAvail?`<span class="clr-income">${fmt(tAvail)}</span>`:'-'}</td></tr>`;
+  const total=`<tr class="total-row"><td>銀行區合計</td><td>${tCashNet?nc(tCashNet):'-'}</td><td>${nc(tOther)}</td><td>${fmt(tBal)}</td><td>${tAvail?`<span class="clr-income">${fmt(tAvail)}</span>`:'-'}</td></tr>`;
   document.getElementById('bank-table-body').innerHTML=rows+total;
 }
 
@@ -3393,6 +3398,12 @@ function checkForUpdate(){
   });
 }
 function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function isValidAppDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s)&&s>='1000-01-01'&&s<='9999-12-31'; }
+function requireValidDate(id,msg='請輸入完整 4 位數年份日期'){
+  const el=document.getElementById(id);
+  if(!el.value||!isValidAppDate(el.value)){ showToast(msg); el.focus(); return false; }
+  return true;
+}
 function fmt(n){ if(n==null||isNaN(n)) return '0'; return Math.round(n).toLocaleString('zh-TW'); }
 function parseAmt(v){ const n=parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
 function fmtInput(v){
@@ -3441,8 +3452,15 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.18';
+const APP_VERSION='2.19';
 const CHANGELOG=[
+  {version:'2.19',date:'2026-05-20',items:[
+    '修正貸款還本金與利息含千分位逗號時儲存數值被截斷的問題',
+    '貸款欄位文字調整為還本金必填與利息自動算',
+    '銀行區合併本月提款與本月存錢為提款/存錢淨額欄位',
+    '新增與編輯日期加入完整 4 位數年份檢查',
+    '電腦操作新增頁時支援按 Enter 快速新增記帳',
+  ]},
   {version:'2.18',date:'2026-05-20',items:[
     'Header 日期下方新增同步按鈕，可從任一頁快速手動同步',
   ]},
