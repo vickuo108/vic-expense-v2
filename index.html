@@ -2898,10 +2898,13 @@ function refreshFormDropdowns(){
   fillMethodSelect(fMethodEl, typeVal);
   fMethodEl.value=curMethod;
   const fMainEl=document.getElementById('f-main');
+  const fSubEl=document.getElementById('f-sub');
   const curMain=fMainEl.value;
+  const curSub=fSubEl.value;
   fillMainSelect(fMainEl, fMethodEl.value, true, typeVal);
   fMainEl.value=curMain;
-  updateSubByMain(fMainEl.value, document.getElementById('f-sub'));
+  updateSubByMain(fMainEl.value, fSubEl);
+  if([...fSubEl.options].some(op=>op.value===curSub)) fSubEl.value=curSub;
   populateFilterDropdowns();
 }
 function balListAdd(cid,groupKey){
@@ -3151,11 +3154,11 @@ function addFixed(){
   const fixed=loadFixed();
   if(fixed.find(f=>f.name===name)){showToast('已存在相同名稱');return;}
   fixed.push({id:genId(),name,amount:amt}); saveFixed(fixed);
-  renderFixedEditor(); showToast('✅ 已新增');
+  renderFixedEditor(); refreshFormDropdowns(); showToast('✅ 已新增');
 }
 function delFixed(id){
   if(!confirm('確定刪除？')) return;
-  saveFixed(loadFixed().filter(f=>f.id!==id)); renderFixedEditor(); showToast('已刪除');
+  saveFixed(loadFixed().filter(f=>f.id!==id)); renderFixedEditor(); refreshFormDropdowns(); showToast('已刪除');
 }
 
 // ── 長按拖曳排序 ─────────────────────────────────────────────────────────────
@@ -3216,7 +3219,7 @@ function _dsCommit(container, isSub){
   }
   const keys=[...container.querySelectorAll(':scope>.list-item-row[data-dkey]')].map(r=>r.dataset.dkey);
   const s=container.dataset.dsave, g=container.dataset.dgrp;
-  if(s==='fixed'){ const m=new Map(loadFixed().map(x=>[x.id,x])); saveFixed(keys.map(k=>m.get(k)).filter(Boolean)); renderFixedEditor(); }
+  if(s==='fixed'){ const m=new Map(loadFixed().map(x=>[x.id,x])); saveFixed(keys.map(k=>m.get(k)).filter(Boolean)); renderFixedEditor(); refreshFormDropdowns(); }
   else if(s==='loans'){ const m=new Map(loadLoans().map(x=>[x.id,x])); saveLoans(keys.map(k=>m.get(k)).filter(Boolean)); renderLoansEditor(); }
   else if(s==='finplan'){ const m=new Map(loadFinPlan().map(x=>[x.id,x])); saveFinPlan(keys.map(k=>m.get(k)).filter(Boolean)); renderFinPlanEditor(); }
   else if(s==='cclimits'){ const m=new Map(loadCCLimits().map(x=>[x.id,x])); saveCCLimits(keys.map(k=>m.get(k)).filter(Boolean)); renderCCLimitsEditor(); }
@@ -3369,8 +3372,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.15';
+const APP_VERSION='2.16';
 const CHANGELOG=[
+  {version:'2.16',date:'2026-05-20',items:[
+    '修正固定支出設定新增、刪除與排序後，新增記帳子類別未同步更新的問題',
+  ]},
   {version:'2.15',date:'2026-05-20',items:[
     '修正季&月報表橫向滑動時，預估欄位錯誤固定到最左側的問題',
   ]},
