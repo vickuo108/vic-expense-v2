@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   populateAddForm();
   populateEditForm();
   populateFilterDropdowns();
-  document.getElementById('f-date').value=localDateStr();
+  refreshTodayUI();
   initFormListeners();
   autoFillAmtSign();
   initEditListeners();
@@ -1224,16 +1224,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   checkChangelog();
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'){
-      document.getElementById('f-date').value=localDateStr();
+      refreshTodayUI();
       if(_swReg) _swReg.update(); // 從背景回來時也再檢查一次
     }
   });
 });
 
-function initHeader(){
+function refreshTodayUI(){
   const now=new Date();
   document.getElementById('header-date').textContent=now.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',weekday:'short'});
+  const fDate=document.getElementById('f-date');
+  if(fDate) fDate.value=localDateStr(now);
   updateHeaderSub();
+}
+
+function initHeader(){
+  refreshTodayUI();
   loadAppTitle();
 }
 const KEY_APP_NAME='vic2_app_name';
@@ -3452,8 +3458,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.19';
+const APP_VERSION='2.20';
 const CHANGELOG=[
+  {version:'2.20',date:'2026-05-21',items:[
+    '修正跨日後 Header 日期未與新增表單日期同步更新的問題',
+  ]},
   {version:'2.19',date:'2026-05-20',items:[
     '修正貸款還本金與利息含千分位逗號時儲存數值被截斷的問題',
     '貸款欄位文字調整為還本金必填與利息自動算',
