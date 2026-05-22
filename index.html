@@ -383,6 +383,7 @@ input[type=number]{-moz-appearance:textfield}
   </div>
 
   <div class="content" id="main-content">
+    <form id="add-form" style="height:0;margin:0;padding:0;overflow:hidden"></form>
 
     <!-- ── 新增 Panel ── -->
     <div class="panel active" id="panel-add">
@@ -416,7 +417,7 @@ input[type=number]{-moz-appearance:textfield}
           <div class="form-row" style="align-items:center">
             <div class="amount-wrap">
               <span class="amount-currency">$</span>
-              <input type="text" inputmode="decimal" class="form-control" id="f-amount" placeholder="-200 或 50,000">
+              <input type="text" inputmode="decimal" enterkeyhint="done" form="add-form" class="form-control" id="f-amount" placeholder="-200 或 50,000">
             </div>
             <!-- 分期（信用卡時顯示，inline） -->
             <div id="f-install-extra" style="display:none;align-items:center;gap:6px">
@@ -436,7 +437,7 @@ input[type=number]{-moz-appearance:textfield}
               <label class="form-label">還本金（必填）</label>
               <div class="amount-wrap">
                 <span class="amount-currency">$</span>
-                <input type="text" inputmode="decimal" class="form-control" id="f-loan-p" placeholder="-14,631">
+                <input type="text" inputmode="decimal" enterkeyhint="done" form="add-form" class="form-control" id="f-loan-p" placeholder="-14,631">
               </div>
             </div>
             <div class="form-group">
@@ -450,7 +451,7 @@ input[type=number]{-moz-appearance:textfield}
         </div>
         <div class="form-group">
           <label class="form-label">備註</label>
-          <input type="text" class="form-control" id="f-note" placeholder="選填">
+          <input type="text" enterkeyhint="done" form="add-form" class="form-control" id="f-note" placeholder="選填">
         </div>
         <div class="form-group">
           <label class="form-label">女友分攤</label>
@@ -1537,6 +1538,9 @@ function initFormListeners(){
     if(!isCC) resetInstall('f');
   });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
+  document.getElementById('add-form').addEventListener('submit',e=>{
+    e.preventDefault(); submitAdd();
+  });
   document.getElementById('panel-add').addEventListener('keydown',e=>{
     if(e.key!=='Enter'||e.isComposing||e.target.closest('button')) return;
     e.preventDefault(); submitAdd();
@@ -3482,8 +3486,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.24';
+const APP_VERSION='2.25';
 const CHANGELOG=[
+  {version:'2.25',date:'2026-05-22',items:[
+    '新增頁支援按手機鍵盤完成鍵直接新增記帳',
+  ]},
   {version:'2.24',date:'2026-05-22',items:[
     '進一步降低統計與報表頁日期切換列高度',
     '調整記錄與統計頁頂部灰色留白，與報表頁距離一致',
