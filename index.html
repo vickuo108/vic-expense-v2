@@ -55,6 +55,9 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .split-opt[data-v="custom"].active{background:#F5F3FF;border-color:#7C3AED;color:#7C3AED}
 .share-preview{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 13px;font-size:13px;color:#1D4ED8;margin-top:8px;display:none}
 .share-preview.show{display:block}
+.install-preview{background:#F5F3FF;border-color:#DDD6FE;color:#6D28D9;line-height:1.6}
+.install-preview-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.install-preview-pill{background:#fff;border:1px solid #DDD6FE;border-radius:999px;padding:1px 8px;font-size:12px;color:#6D28D9}
 .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;box-shadow:0 4px 12px var(--primary-s35)}
 .btn-submit:active{transform:scale(.98)}
 .search-row{display:flex;gap:8px;margin-bottom:10px}
@@ -429,6 +432,7 @@ input[type=number]{-moz-appearance:textfield}
               </div>
             </div>
           </div>
+          <div class="share-preview install-preview" id="install-preview"></div>
         </div>
         <!-- 貸款額外欄位 -->
         <div id="f-loan-extra" style="display:none">
@@ -1481,12 +1485,14 @@ function initFormListeners(){
         if(item&&item.amount) amtEl.value=fmtInput(-Math.abs(item.amount));
       }
     }
+    updateInstallPreview();
   });
 
   document.getElementById('f-date').addEventListener('change',()=>{ if(mainEl.value==='貸款') applyLoanDefaults(!!subEl.value); });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'f'));
-  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); });
-  amtEl.addEventListener('blur',()=>{ updateSharePreview(); });
+  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); });
+  amtEl.addEventListener('blur',()=>{ updateSharePreview(); updateInstallPreview(); });
+  document.getElementById('f-install-count').addEventListener('input',updateInstallPreview);
 
   document.querySelectorAll('#panel-add .split-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -1592,6 +1598,19 @@ function updateSharePreview(){
   }
 }
 
+function updateInstallPreview(){
+  const prev=document.getElementById('install-preview');
+  if(!prev) return;
+  const active=document.getElementById('f-install-toggle').classList.contains('active');
+  const n=parseInt(document.getElementById('f-install-count').value);
+  const amt=Math.round(Math.abs(parseAmt(document.getElementById('f-amount').value)));
+  if(!active||!amt||!(n>=2)){ prev.classList.remove('show'); prev.innerHTML=''; return; }
+  const each=Math.round(amt/n);
+  const parts=Array.from({length:n},(_,i)=>i===n-1?amt-each*(n-1):each);
+  prev.classList.add('show');
+  prev.innerHTML=`每期攤還金額：共 ${n} 期，合計 ${fmt(amt)}<div class="install-preview-list">${parts.map((v,i)=>`<span class="install-preview-pill">第 ${i+1} 期 ${fmt(v)}</span>`).join('')}</div>`;
+}
+
 function isCCMethod(method){ return (loadMG()['信用卡']||[]).includes(method); }
 function toggleInstall(prefix){
   const btn=document.getElementById(`${prefix}-install-toggle`);
@@ -1601,6 +1620,7 @@ function toggleInstall(prefix){
   btn.textContent=nowActive?'分期':'不分期';
   wrap.style.display=nowActive?'flex':'none';
   if(!nowActive) document.getElementById(`${prefix}-install-count`).value='';
+  if(prefix==='f') updateInstallPreview();
 }
 function resetInstall(prefix){
   const btn=document.getElementById(`${prefix}-install-toggle`);
@@ -1609,6 +1629,7 @@ function resetInstall(prefix){
   if(btn){btn.classList.remove('active');btn.textContent='不分期';}
   if(wrap) wrap.style.display='none';
   if(inp) inp.value='';
+  if(prefix==='f') updateInstallPreview();
 }
 function submitAdd(){
   const date=document.getElementById('f-date').value;
@@ -1659,6 +1680,7 @@ function resetAddForm(){
   document.getElementById('f-custom-wrap').style.display='none';
   document.getElementById('f-custom-pct').value='';
   document.getElementById('share-preview').classList.remove('show');
+  updateInstallPreview();
 }
 
 // ─── Records ───────────────────────────────────────────────────────────────
@@ -3496,8 +3518,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.26';
+const APP_VERSION='2.27';
 const CHANGELOG=[
+  {version:'2.27',date:'2026-05-22',items:[
+    '新增信用卡分期時顯示每期攤還金額預覽',
+  ]},
   {version:'2.26',date:'2026-05-22',items:[
     '內部轉帳新增財務規劃帳戶選項，可用於緊急預備金提領到銀行帳戶',
     '財務規劃帳戶作為內部轉帳主類別時，金額不再自動帶入負號',
