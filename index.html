@@ -92,6 +92,11 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .tx-swipe-wrap:last-child .tx-item{border-bottom:none}
 .tx-del-btn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#EF4444;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
 .tx-copy-btn{position:absolute;right:72px;top:0;bottom:0;width:72px;background:var(--primary);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
+.ctx-menu{position:fixed;z-index:1200;background:#fff;border:1px solid #E5E7EB;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:6px;display:none;min-width:120px}
+.ctx-menu.open{display:block}
+.ctx-menu-btn{display:block;width:100%;border:none;background:#fff;text-align:left;padding:9px 12px;border-radius:8px;font-size:13px;color:#374151;cursor:pointer}
+.ctx-menu-btn:hover{background:#F3F4F6}
+.ctx-menu-btn.danger{color:#EF4444}
 .tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6;transition:transform .25s cubic-bezier(.25,1,.5,1);background:#fff;position:relative;z-index:2}
 .tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -671,6 +676,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="chart-card">
         <div class="chart-title">💳 信用卡消費</div>
         <div class="chart-wrap" id="wrap-cc"><canvas id="chart-cc"></canvas></div>
+        <div style="font-size:11px;color:#9BA3AF;margin-top:8px;line-height:1.5">僅統計負數消費，不含退刷；如為當月就刷退則刪除該筆消費即可。</div>
       </div>
     </div>
 
@@ -956,6 +962,10 @@ input[type=number]{-moz-appearance:textfield}
   </div>
 </div>
 
+<div id="record-context-menu" class="ctx-menu">
+  <button type="button" class="ctx-menu-btn" data-action="copy">複製</button>
+  <button type="button" class="ctx-menu-btn danger" data-action="delete">刪除</button>
+</div>
 <div class="toast" id="toast"></div>
 <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="handleJSONImport(event)">
 
@@ -1855,6 +1865,7 @@ function initSwipeDelete(){
   list.addEventListener('touchend',_swEnd,{passive:true});
   list.addEventListener('touchcancel',_swEnd,{passive:true});
   list.addEventListener('click',_swClick,true);
+  initRecordContextMenu(list);
 }
 function _swStart(e){
   if(e.target.closest('.tx-del-btn')||e.target.closest('.tx-copy-btn')) return;
@@ -1890,6 +1901,32 @@ function _swClick(e){
   // Normal tap → open edit
   const rid=item.dataset.rid; if(rid) openEdit(rid);
   e.stopPropagation();
+}
+let _ctxRid=null;
+function initRecordContextMenu(list){
+  const menu=document.getElementById('record-context-menu');
+  const close=()=>{ menu.classList.remove('open'); _ctxRid=null; };
+  list.addEventListener('contextmenu',e=>{
+    const item=e.target.closest('.tx-item');
+    if(!item) return;
+    e.preventDefault();
+    if(_swOpen){ _swReset(_swOpen); _swOpen=null; }
+    _ctxRid=item.dataset.rid;
+    menu.classList.add('open');
+    const w=menu.offsetWidth||120, h=menu.offsetHeight||90;
+    menu.style.left=Math.max(8,Math.min(e.clientX,window.innerWidth-w-8))+'px';
+    menu.style.top=Math.max(8,Math.min(e.clientY,window.innerHeight-h-8))+'px';
+  });
+  menu.addEventListener('click',e=>{
+    const btn=e.target.closest('.ctx-menu-btn');
+    if(!btn||!_ctxRid) return;
+    const id=_ctxRid; close();
+    if(btn.dataset.action==='copy') copyRecord(id);
+    if(btn.dataset.action==='delete'&&confirm('確定刪除這筆記錄？')) swipeDelete(id);
+  });
+  document.addEventListener('click',e=>{ if(!menu.contains(e.target)) close(); });
+  window.addEventListener('scroll',close,true);
+  window.addEventListener('resize',close);
 }
 function swipeDelete(id){
   _swOpen=null;
@@ -1939,6 +1976,10 @@ function initEditListeners(){
   document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
   document.getElementById('btn-save').addEventListener('click',saveEdit);
   document.getElementById('btn-delete').addEventListener('click',deleteEdit);
+  document.getElementById('edit-overlay').addEventListener('keydown',e=>{
+    if(e.key!=='Enter'||e.isComposing||e.target.closest('button')) return;
+    e.preventDefault(); saveEdit();
+  });
   document.getElementById('edit-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('edit-overlay')) closeModal(); });
   attachAmtFormat('e-amount');
   attachAmtFormat('e-loan-p');
@@ -2593,8 +2634,9 @@ function renderCCSection(data, prefix){
     const payment=data.filter(r=>isPayment(r,name)&&r.date.startsWith(prefix)).reduce((s,r)=>s+r.amount,0);
     const openOut=bal[name]||0;
     const allCharges=data.filter(r=>r.method===name&&r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+Math.abs(r.amount),0);
+    const allRefunds=data.filter(r=>r.method===name&&r.type!=='清償負債'&&r.amount>0).reduce((s,r)=>s+r.amount,0);
     const allPayments=data.filter(r=>isPayment(r,name)).reduce((s,r)=>s+Math.abs(r.amount),0);
-    const outstanding=openOut+allCharges-allPayments;
+    const outstanding=openOut+allCharges-allPayments-allRefunds;
     tCharge+=charge; tPay+=payment; if(outstanding>0) tOut+=outstanding;
     const lastPay=data.filter(r=>isPayment(r,name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dueStr=lastPay?lastPay.date.slice(5).replace('-','/'):'';
@@ -3525,8 +3567,13 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.30';
+const APP_VERSION='2.31';
 const CHANGELOG=[
+  {version:'2.31',date:'2026-05-26',items:[
+    '信用卡正數退刷會扣減未繳金額，並於信用卡消費圖表下方補充統計說明',
+    '記錄列表支援電腦右鍵複製與刪除，刪除前需確認',
+    '編輯記帳時支援電腦按 Enter 快速儲存',
+  ]},
   {version:'2.30',date:'2026-05-26',items:[
     'Header 摘要改為統一顯示今年支出、收入與筆數',
   ]},
