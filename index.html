@@ -321,6 +321,9 @@ input[type=number]{-moz-appearance:textfield}
 .login-btn:disabled{opacity:.6;cursor:default}
 .login-switch{text-align:center;font-size:13px;color:#9BA3AF}
 .login-switch b{color:var(--primary);cursor:pointer;font-weight:600}
+.login-forgot{text-align:center;margin-top:10px}
+.login-forgot button{border:none;background:transparent;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px}
+.login-forgot button:active{color:var(--primary)}
 .login-error{color:#EF4444;font-size:13px;text-align:center;margin-top:8px;min-height:18px}
 /* ── 同步指示點 ── */
 #sync-dot{width:8px;height:8px;border-radius:50%;background:#10B981;flex-shrink:0;margin-right:4px;display:none}
@@ -347,6 +350,7 @@ input[type=number]{-moz-appearance:textfield}
     <input class="login-input" id="login-password" type="password" placeholder="密碼" autocomplete="current-password">
     <button class="login-btn" id="login-submit-btn" onclick="doAuthSubmit()">登入</button>
     <div class="login-switch"><span id="login-switch-text">還沒有帳號？</span><b onclick="toggleAuthMode()">註冊</b></div>
+    <div class="login-forgot" id="login-forgot-wrap"><button type="button" onclick="showPasswordReset()">忘記密碼？</button></div>
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
@@ -3567,8 +3571,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.31';
+const APP_VERSION='2.32';
 const CHANGELOG=[
+  {version:'2.32',date:'2026-05-26',items:[
+    '登入頁新增忘記密碼流程，可寄出密碼重設信並提示檢查垃圾郵件',
+  ]},
   {version:'2.31',date:'2026-05-26',items:[
     '信用卡正數退刷會扣減未繳金額，並於信用卡消費圖表下方補充統計說明',
     '記錄列表支援電腦右鍵複製與刪除，刪除前需確認',
@@ -4041,12 +4048,27 @@ async function manualSync(){
 }
 
 // Auth UI
+function renderAuthMode(){
+  const isLogin=_authMode==='login';
+  const isRegister=_authMode==='register';
+  document.getElementById('login-mode-sub').textContent=isLogin?'登入以同步資料':isRegister?'建立新帳號':'輸入 Email 取得重設連結';
+  document.getElementById('login-submit-btn').textContent=isLogin?'登入':isRegister?'註冊':'寄出重設信';
+  document.getElementById('login-switch-text').textContent=isRegister?'已有帳號？':_authMode==='reset'?'想起密碼？':'還沒有帳號？';
+  document.querySelector('.login-switch b').textContent=isRegister||_authMode==='reset'?'登入':'註冊';
+  document.getElementById('login-password').style.display=_authMode==='reset'?'none':'block';
+  document.getElementById('login-forgot-wrap').style.display=isLogin?'block':'none';
+  document.getElementById('login-error').style.color='#EF4444';
+  document.getElementById('login-error').textContent='';
+}
+
 function toggleAuthMode(){
   _authMode=_authMode==='login'?'register':'login';
-  document.getElementById('login-mode-sub').textContent=_authMode==='login'?'登入以同步資料':'建立新帳號';
-  document.getElementById('login-submit-btn').textContent=_authMode==='login'?'登入':'註冊';
-  document.getElementById('login-switch-text').textContent=_authMode==='login'?'還沒有帳號？':'已有帳號？';
-  document.getElementById('login-error').textContent='';
+  renderAuthMode();
+}
+
+function showPasswordReset(){
+  _authMode='reset';
+  renderAuthMode();
 }
 
 async function doAuthSubmit(){
@@ -4054,6 +4076,8 @@ async function doAuthSubmit(){
   const pw=document.getElementById('login-password').value;
   const errEl=document.getElementById('login-error');
   const btn=document.getElementById('login-submit-btn');
+  if(_authMode==='reset'){ await sendPasswordReset(); return; }
+  errEl.style.color='#EF4444';
   if(!email||!pw){ errEl.textContent='請填寫 Email 和密碼'; return; }
   btn.disabled=true; errEl.textContent='';
   try{
@@ -4069,6 +4093,30 @@ async function doAuthSubmit(){
       'auth/invalid-credential':'帳號或密碼錯誤',
     };
     errEl.textContent=msg[e.code]||'登入失敗，請再試一次';
+    btn.disabled=false;
+  }
+}
+
+async function sendPasswordReset(){
+  const emailEl=document.getElementById('login-email');
+  const errEl=document.getElementById('login-error');
+  const btn=document.getElementById('login-submit-btn');
+  const email=emailEl.value.trim();
+  errEl.style.color='#EF4444';
+  if(!email){ errEl.textContent='請先輸入 Email'; return; }
+  btn.disabled=true; errEl.textContent='';
+  try{
+    await _auth.sendPasswordResetEmail(email);
+    errEl.style.color='#10B981';
+    errEl.textContent='已寄出密碼重設信，請到信箱查看；如果沒收到，請檢查垃圾郵件。';
+  } catch(e){
+    const msg={
+      'auth/user-not-found':'找不到此帳號',
+      'auth/invalid-email':'Email 格式不正確',
+    };
+    errEl.style.color='#EF4444';
+    errEl.textContent=msg[e.code]||'無法寄出重設信，請再試一次';
+  } finally {
     btn.disabled=false;
   }
 }
