@@ -3010,7 +3010,7 @@ function renderCCEditor(containerId, list){
   const bal=loadAcctBal();
   const rows=list.map(item=>`
     <div class="list-item-row" data-dkey="${item}">
-      <span class="list-item-name">${item}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editBalanceItem('${containerId}','${esc(item)}','信用卡')">${item}</span>
       <span class="inline-num-label">期初 $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0"
         onblur="saveAcctBalItem('${esc(item)}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3032,7 +3032,7 @@ function renderBankEditor(containerId, list, groupKey){
     const isAvail=avail[item]||false;
     const btnStyle=isAvail?'background:#DCFCE7;border-color:#16A34A;color:#15803D':'background:#F3F4F6;border-color:#D1D5DB;color:#9BA3AF';
     return `<div class="list-item-row" data-dkey="${item}">
-      <span class="list-item-name">${item}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editBalanceItem('${containerId}','${esc(item)}','${groupKey}')">${item}</span>
       <span class="inline-num-label">期初 $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0"
         onblur="saveAcctBalItem('${esc(item)}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3055,7 +3055,7 @@ function renderCCLimitsEditor(){
   const header=`<div class="fin-plan-total"><span>信用卡總額度</span><span>$${fmt(total)}</span></div>`;
   const rows=limits.map(l=>`
     <div class="list-item-row" data-dkey="${l.id}">
-      <span class="list-item-name">${l.name}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editCCLimitName('${l.id}')">${l.name}</span>
       <span class="inline-num-label">$</span>
       <input type="number" class="inline-num" value="${l.amount||''}" placeholder="0" min="0" step="1"
         onblur="saveCCLimitAmt('${l.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3080,13 +3080,22 @@ function delCCLimit(id){
   if(!confirm('確定刪除？')) return;
   saveCCLimits(loadCCLimits().filter(l=>l.id!==id)); renderCCLimitsEditor(); showToast('已刪除');
 }
+async function editCCLimitName(id){
+  const limits=loadCCLimits(); const item=limits.find(l=>l.id===id); if(!item) return;
+  const oldName=item.name;
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  if(limits.some(l=>l.name===newName)){ showToast('已存在相同名稱'); return; }
+  item.name=newName; saveCCLimits(limits);
+  renderCCLimitsEditor(); showToast('✅ 已更名');
+}
 
 function renderBalanceListEditor(containerId, list, groupKey, amtLabel){
   const el=document.getElementById(containerId);
   const bal=loadAcctBal();
   const rows=list.map(item=>`
     <div class="list-item-row" data-dkey="${item}">
-      <span class="list-item-name">${item}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editBalanceItem('${containerId}','${esc(item)}','${groupKey}')">${item}</span>
       <span class="inline-num-label">${amtLabel} $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0" min="0" step="1"
         onblur="saveAcctBalItem('${esc(item)}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3101,6 +3110,29 @@ function saveAcctBalItem(name,val){
   const bal=loadAcctBal(); const n=parseFloat(val)||0;
   if(n) bal[name]=n; else delete bal[name];
   saveAcctBal(bal);
+}
+function renameObjKey(obj,oldName,newName){
+  if(obj[oldName]===undefined) return false;
+  obj[newName]=obj[oldName]; delete obj[oldName]; return true;
+}
+function renameRecordRefs(match,update){
+  const records=loadRecords(); let dirty=false;
+  records.forEach(r=>{ if(match(r)){ update(r); dirty=true; } });
+  if(dirty) saveRecords(records);
+}
+async function editBalanceItem(containerId,oldName,groupKey){
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  const mg=loadMG(); const list=mg[groupKey]||[];
+  if(loadMethods().includes(newName)){ showToast('已存在相同名稱'); return; }
+  const idx=list.indexOf(oldName); if(idx<0) return;
+  list[idx]=newName; mg[groupKey]=list; saveMG(mg);
+  const bal=loadAcctBal(); if(renameObjKey(bal,oldName,newName)) saveAcctBal(bal);
+  const avail=loadAcctAvail(); if(renameObjKey(avail,oldName,newName)) saveAcctAvail(avail);
+  const due=loadCCDue(); if(renameObjKey(due,oldName,newName)) saveCCDue(due);
+  renameRecordRefs(r=>r.method===oldName,r=>{ r.method=newName; });
+  renameRecordRefs(r=>['轉帳','加值','繳信用卡款'].includes(r.main)&&r.sub===oldName,r=>{ r.sub=newName; });
+  renderAllSettingsEditors(); refreshFormDropdowns(); showToast('✅ 已更名');
 }
 function refreshFormDropdowns(){
   const fMethodEl=document.getElementById('f-method');
@@ -3139,7 +3171,7 @@ function renderFinPlanEditor(){
   const header=`<div class="fin-plan-total"><span>帳戶總額</span><span>$${fmt(total)}</span></div>`;
   const rows=plans.map(p=>`
     <div class="list-item-row" data-dkey="${p.id}">
-      <span class="list-item-name">${p.name}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editFinPlanName('${p.id}')">${p.name}</span>
       <span class="inline-num-label">$</span>
       <input type="text" inputmode="decimal" class="inline-num" value="${p.amount||''}" placeholder="0"
         onblur="saveFinPlanAmt('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3167,12 +3199,22 @@ function delFinPlan(id){
   if(!confirm('確定刪除？')) return;
   saveFinPlan(loadFinPlan().filter(p=>p.id!==id)); renderFinPlanEditor(); showToast('已刪除');
 }
+async function editFinPlanName(id){
+  const plans=loadFinPlan(); const item=plans.find(p=>p.id===id); if(!item) return;
+  const oldName=item.name;
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  if(plans.some(p=>p.name===newName)){ showToast('已存在相同名稱'); return; }
+  item.name=newName; saveFinPlan(plans);
+  renameRecordRefs(r=>r.main===oldName,r=>{ r.main=newName; });
+  renderFinPlanEditor(); refreshFormDropdowns(); showToast('✅ 已更名');
+}
 
 function renderSimpleListEditor(containerId, list, placeholder, onSave){
   const el=document.getElementById(containerId);
   const rows=list.map((item,i)=>`
     <div class="list-item-row" data-dkey="${item}">
-      <span class="list-item-name">${item}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="simpleListEdit('${containerId}',${i})">${item}</span>
       <button class="list-item-del" onclick="simpleListDel('${containerId}',${i})">×</button>
     </div>`).join('');
   el.innerHTML=rows+`<div class="list-add-row">
@@ -3198,6 +3240,17 @@ function simpleListDel(cid, idx){
   const el=document.getElementById(cid);
   const list=[...el._list]; list.splice(idx,1); el._onSave(list);
   renderAllSettingsEditors(); showToast('已刪除');
+}
+async function simpleListEdit(cid, idx){
+  const el=document.getElementById(cid);
+  const list=[...el._list];
+  const oldName=list[idx]; if(!oldName) return;
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  if(list.includes(newName)){ showToast('已存在相同名稱'); return; }
+  list[idx]=newName; el._onSave(list);
+  if(cid==='editor-income') renameRecordRefs(r=>r.type==='收入'&&r.main===oldName,r=>{ r.main=newName; });
+  renderAllSettingsEditors(); refreshFormDropdowns(); showToast('✅ 已更名');
 }
 
 function renderFloatCatsEditor(){
@@ -3292,7 +3345,7 @@ function renderFixedEditor(){
   const grpOpts=groups.map(g=>`<option value="${g}">${g}</option>`).join('');
   const rows=fixed.map(f=>`
     <div class="list-item-row" data-dkey="${f.id}">
-      <span class="list-item-name">${f.name}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editFixedName('${f.id}')">${f.name}</span>
       <select style="font-size:11px;border:1px solid #E5E7EB;border-radius:5px;padding:2px 2px;color:#6B7280;background:#fff;max-width:110px;min-width:80px" onchange="saveFixedGroup('${f.id}',this.value)">
         ${groups.map(g=>`<option value="${g}"${(f.group||fallback)===g?' selected':''}>${g}</option>`).join('')}
       </select>
@@ -3358,6 +3411,22 @@ function deleteFixedGroup(name){
 function saveFixedAmt(id, val){
   const fixed=loadFixed(); const item=fixed.find(f=>f.id===id); if(!item) return;
   item.amount=parseFloat(val)||0; saveFixed(fixed);
+}
+async function editFixedName(id){
+  const fixed=loadFixed(); const item=fixed.find(f=>f.id===id); if(!item) return;
+  const oldName=item.name;
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  if(fixed.some(f=>f.name===newName)){ showToast('已存在相同名稱'); return; }
+  item.name=newName; saveFixed(fixed);
+  renameRecordRefs(r=>r.main==='固定支出'&&r.sub===oldName,r=>{ r.sub=newName; });
+  const budgets=loadMonthlyBudgets();
+  Object.values(budgets).forEach(mo=>{
+    const oldKey='fixed:'+oldName, newKey='fixed:'+newName;
+    if(mo[oldKey]!==undefined){ mo[newKey]=mo[oldKey]; delete mo[oldKey]; }
+  });
+  saveMonthlyBudgets(budgets);
+  renderFixedEditor(); refreshFormDropdowns(); showToast('✅ 已更名');
 }
 function addFixed(){
   const name=document.getElementById('fixed-name-inp').value.trim();
@@ -3447,7 +3516,7 @@ function renderLoansEditor(){
   const el=document.getElementById('editor-loans');
   const rows=loans.map(l=>`
     <div class="list-item-row" data-dkey="${l.id}">
-      <span class="list-item-name">${l.name}</span>
+      <span class="list-item-name" style="cursor:pointer" onclick="editLoanName('${l.id}')">${l.name}</span>
       <span class="inline-num-label">期初本金 $</span>
       <input type="number" class="inline-num" value="${l.principal||''}" placeholder="0" min="0" step="1"
         onblur="saveLoanPrincipal('${l.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
@@ -3473,6 +3542,16 @@ function addLoan(){
 function delLoan(id){
   if(!confirm('確定刪除此貸款？')) return;
   saveLoans(loadLoans().filter(l=>l.id!==id)); renderLoansEditor(); showToast('已刪除');
+}
+async function editLoanName(id){
+  const loans=loadLoans(); const item=loans.find(l=>l.id===id); if(!item) return;
+  const oldName=item.name;
+  const newName=((await showInputDialog(`重新命名「${oldName}」：`,oldName))||'').trim();
+  if(!newName||newName===oldName) return;
+  if(loans.some(l=>l.name===newName)){ showToast('已存在相同名稱'); return; }
+  item.name=newName; saveLoans(loans);
+  renameRecordRefs(r=>r.main==='貸款'&&r.sub===oldName,r=>{ r.sub=newName; });
+  renderLoansEditor(); refreshFormDropdowns(); showToast('✅ 已更名');
 }
 
 // ─── Backup / restore ──────────────────────────────────────────────────────
@@ -3617,8 +3696,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.33';
+const APP_VERSION='2.34';
 const CHANGELOG=[
+  {version:'2.34',date:'2026-05-27',items:[
+    '設定頁各主要清單項目支援點擊名稱重新命名，並同步更新相關記錄與預算引用',
+  ]},
   {version:'2.33',date:'2026-05-27',items:[
     '重新命名輸入框改為自訂彈窗，確認按鈕文字統一顯示為確認',
   ]},
