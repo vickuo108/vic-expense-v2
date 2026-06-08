@@ -2844,15 +2844,16 @@ function renderBankSection(data, prefix){
 
 function renderGFSummary(data, prefix){
   const hasGfShare=r=>typeof r.split==='number'&&gfOwes(r.amount,r.split)>0;
+  const untilMonth=r=>r.date&&r.date.slice(0,7)<=prefix;
   const mo=data.filter(r=>r.date.startsWith(prefix)&&hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
   const mr=data.filter(r=>r.date.startsWith(prefix)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
-  const ao=data.filter(r=>hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
-  const ar=data.filter(r=>r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
+  const ao=data.filter(r=>untilMonth(r)&&hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
+  const ar=data.filter(r=>untilMonth(r)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
   document.getElementById('gf-rows').innerHTML=`
     <div class="gf-row"><span class="gf-key">本月應還</span><span class="gf-val">$${fmt(mo)}</span></div>
     <div class="gf-row"><span class="gf-key">本月已還</span><span class="gf-val" style="color:#16A34A">-$${fmt(mr)}</span></div>
-    <div class="gf-row"><span class="gf-key">累計已還（全部）</span><span class="gf-val" style="color:#16A34A">-$${fmt(ar)}</span></div>
-    <div class="gf-row"><span class="gf-key">累計淨欠（全部）</span><span class="gf-val">$${fmt(ao-ar)}</span></div>`;
+    <div class="gf-row"><span class="gf-key">累計已還（截至本月）</span><span class="gf-val" style="color:#16A34A">-$${fmt(ar)}</span></div>
+    <div class="gf-row"><span class="gf-key">累計淨欠（截至本月）</span><span class="gf-val">$${fmt(ao-ar)}</span></div>`;
 }
 
 function renderLoanTable(data, prefix){
@@ -3789,8 +3790,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.41';
+const APP_VERSION='2.42';
 const CHANGELOG=[
+  {version:'2.42',date:'2026-06-07',items:[
+    '女友統計的累計已還與累計淨欠改為只計算到目前選取月份',
+  ]},
   {version:'2.41',date:'2026-06-06',items:[
     '記錄頁月份標題旁新增共幾筆、淨現流、流入與流出摘要',
   ]},
