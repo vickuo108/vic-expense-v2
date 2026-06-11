@@ -117,6 +117,10 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .badge-half{background:#FEF3C7;color:#D97706}
 .badge-repay{background:#DCFCE7;color:#16A34A}
 .badge-install{background:#EDE9FE;color:#7C3AED}
+.gf-status-line{font-size:10px;margin-top:2px;font-weight:700}
+.gf-status-due{color:#DC2626}
+.gf-status-partial{color:#D97706}
+.gf-status-paid{color:#16A34A}
 .install-toggle-btn{padding:9px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;color:#6B7280}
 .install-toggle-btn.active{background:#EDE9FE;border-color:#7C3AED;color:#7C3AED;border-width:2px}
 .cc-install-row{background:#F5F3FF}
@@ -155,11 +159,21 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .chart-title{font-size:14px;font-weight:700;margin-bottom:12px;color:#374151}
 .chart-wrap{position:relative;height:200px}
 .gf-summary{background:linear-gradient(135deg,#FFF1F2,#FFE4E6);border:1px solid #FECDD3;border-radius:14px;padding:14px;margin-bottom:10px}
-.gf-title{font-size:13px;color:#9F1239;font-weight:700;margin-bottom:8px}
+.gf-summary.clickable{cursor:pointer}
+.gf-summary.clickable:active{opacity:.82}
+.gf-title{font-size:13px;color:#9F1239;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gf-title-sub{font-size:11px;color:#BE123C;font-weight:600}
 .gf-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #FECDD3;font-size:13px}
 .gf-row:last-child{border-bottom:none}
 .gf-key{color:#6B7280}
 .gf-val{font-weight:700;color:#DC2626}
+.gf-detail-item{padding:10px 0;border-bottom:1px solid #FCE7F3}
+.gf-detail-item:last-child{border-bottom:none}
+.gf-detail-main{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;font-size:13px}
+.gf-detail-title{font-weight:700;color:#374151;min-width:0}
+.gf-detail-amount{text-align:right;font-weight:800;white-space:nowrap;color:#DC2626}
+.gf-detail-sub{font-size:11px;color:#9BA3AF;margin-top:2px;line-height:1.4}
+.gf-detail-progress{font-size:11px;font-weight:700;margin-top:4px}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;background:#fff;border-radius:12px;padding:4px 10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .month-nav-btn{background:none;border:1.5px solid #E5E7EB;border-radius:8px;padding:2px 9px;cursor:pointer;font-size:15px;color:#374151}
 .month-label{font-size:16px;font-weight:800;color:#1A1A2E}
@@ -662,8 +676,8 @@ input[type=number]{-moz-appearance:textfield}
           </table>
         </div>
       </div>
-      <div class="gf-summary" id="sec-gf">
-        <div class="gf-title">👭 女友應還款項</div>
+      <div class="gf-summary clickable" id="sec-gf" onclick="showGFDueSheet()">
+        <div class="gf-title"><span>👭 女友應還款項</span><span class="gf-title-sub">待還明細 ›</span></div>
         <div id="gf-rows"></div>
       </div>
       <div class="chart-card" id="fin-plan-section">
@@ -1211,6 +1225,74 @@ function gfOwes(amount, split){
 }
 function gfRepaid(amount, split){
   return split==='repay'?Math.abs(amount):0;
+}
+function htmlEsc(s){
+  return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function gfHasShare(r){
+  return typeof r.split==='number'&&r.amount<0&&gfOwes(r.amount,r.split)>0;
+}
+function gfUntilMonth(prefix){
+  return r=>r.date&&r.date.slice(0,7)<=prefix;
+}
+function gfSettleKey(r){
+  return `${r.main||''}|||${r.sub||''}`;
+}
+function gfHasSettleKey(r){
+  return !!(r.main||r.sub);
+}
+function gfSettlement(data, prefix=null){
+  const inScope=prefix?gfUntilMonth(prefix):()=>true;
+  const owedItems=data.filter(r=>inScope(r)&&gfHasShare(r))
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
+    .map(r=>({record:r,due:gfOwes(r.amount,r.split),paid:0,remaining:gfOwes(r.amount,r.split)}));
+  const repayPools={};
+  let globalRepayLeft=0;
+  data.filter(r=>inScope(r)&&r.split==='repay')
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
+    .forEach(r=>{
+      const amt=gfRepaid(r.amount,r.split);
+      if(gfHasSettleKey(r)){
+        const key=gfSettleKey(r);
+        repayPools[key]=(repayPools[key]||0)+amt;
+      } else {
+        globalRepayLeft+=amt;
+      }
+    });
+  owedItems.forEach(item=>{
+    const key=gfSettleKey(item.record);
+    const keyedPaid=Math.min(item.due,repayPools[key]||0);
+    item.paid=keyedPaid;
+    repayPools[key]=(repayPools[key]||0)-keyedPaid;
+    if(item.paid<item.due&&globalRepayLeft>0){
+      const globalPaid=Math.min(item.due-item.paid,globalRepayLeft);
+      item.paid+=globalPaid;
+      globalRepayLeft-=globalPaid;
+    }
+    item.remaining=item.due-item.paid;
+    item.status=item.remaining<=0?'paid':item.paid>0?'partial':'due';
+  });
+  const byId={};
+  owedItems.forEach(item=>{ byId[item.record.id]=item; });
+  const keyedOverflow=Object.values(repayPools).reduce((s,n)=>s+Math.max(0,n),0);
+  return {items:owedItems,byId,repayOverflow:globalRepayLeft+keyedOverflow};
+}
+function gfStatusText(item){
+  if(!item) return '';
+  if(item.status==='paid') return `已還 $${fmt(item.due)}`;
+  if(item.status==='partial') return `部分已還 $${fmt(item.paid)} / $${fmt(item.due)}，待還 $${fmt(item.remaining)}`;
+  return `待還 $${fmt(item.remaining)}`;
+}
+function gfStatusClass(item){
+  if(!item) return '';
+  return item.status==='paid'?'gf-status-paid':item.status==='partial'?'gf-status-partial':'gf-status-due';
+}
+function gfRecordTitle(r){
+  return [r.main||r.type,r.sub].filter(Boolean).join(' / ')||'女友分攤';
+}
+function gfShortDate(s){
+  const [,m,d]=s.split('-').map(Number);
+  return `${m}/${d}`;
 }
 
 // ─── State ─────────────────────────────────────────────────────────────────
@@ -1852,7 +1934,9 @@ function flowSummaryHTML(records){
   return parts.map(p=>"<span>"+p+"</span>").join("");
 }
 function renderRecords(){
-  const filtered=applyFilters(loadRecords()).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  const allRecords=loadRecords();
+  const gfSettle=gfSettlement(allRecords);
+  const filtered=applyFilters(allRecords).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
   const list=document.getElementById('records-list');
   const sumEl=document.getElementById('records-summary');
   const catEl=document.getElementById('records-cat-stats');
@@ -1919,12 +2003,12 @@ function renderRecords(){
     const month=date.slice(0,7);
     const monthHeader=month!==lastMonth?(lastMonth=month,`<div class="date-month-label"><span class="date-month-title">${formatMonthLabel(month)}</span><span class="date-month-summary">${flowSummaryHTML(monthGroups[month])}</span></div>`):"";
     return `${monthHeader}<div class="date-group-label">${formatDateLabel(date)}</div>
-    <div class="card" style="padding:4px 14px">${groups[date].map(txItemHTML).join('')}</div>`;
+      <div class="card" style="padding:4px 14px">${groups[date].map(r=>txItemHTML(r,gfSettle.byId[r.id])).join('')}</div>`;
   }).join('');
   updateClearBtn();
 }
 
-function txItemHTML(r){
+function txItemHTML(r,gfItem=null){
   const ic=catIcon(r.main||r.type), bg=catBg(r.main||r.type);
   const amtCls=r.amount<0?'clr-expense':r.amount>0?'clr-income':'clr-transfer';
   const amtStr=fmt(Math.abs(r.amount));
@@ -1945,6 +2029,7 @@ function txItemHTML(r){
       <div class="tx-body">
         <div class="tx-main">${mainLine} ${badge}</div>
         ${r.note?`<div class="tx-note">${r.note}</div>`:''}
+        ${gfItem?`<div class="gf-status-line ${gfStatusClass(gfItem)}">${gfStatusText(gfItem)}</div>`:''}
       </div>
       <div class="tx-right">
         <div class="tx-amount-val ${amtCls}">${amtStr}</div>
@@ -2843,17 +2928,38 @@ function renderBankSection(data, prefix){
 }
 
 function renderGFSummary(data, prefix){
-  const hasGfShare=r=>typeof r.split==='number'&&gfOwes(r.amount,r.split)>0;
-  const untilMonth=r=>r.date&&r.date.slice(0,7)<=prefix;
-  const mo=data.filter(r=>r.date.startsWith(prefix)&&hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
+  const settle=gfSettlement(data,prefix);
+  const mo=settle.items.filter(x=>x.record.date.startsWith(prefix)).reduce((s,x)=>s+x.due,0);
   const mr=data.filter(r=>r.date.startsWith(prefix)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
-  const ao=data.filter(r=>untilMonth(r)&&hasGfShare(r)&&r.amount<0).reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
-  const ar=data.filter(r=>untilMonth(r)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
+  const monthUnpaid=settle.items.filter(x=>x.record.date.startsWith(prefix)).reduce((s,x)=>s+x.remaining,0);
+  const totalUnpaid=settle.items.reduce((s,x)=>s+x.remaining,0);
   document.getElementById('gf-rows').innerHTML=`
     <div class="gf-row"><span class="gf-key">本月應還</span><span class="gf-val">$${fmt(mo)}</span></div>
     <div class="gf-row"><span class="gf-key">本月已還</span><span class="gf-val" style="color:#16A34A">-$${fmt(mr)}</span></div>
-    <div class="gf-row"><span class="gf-key">累計已還（截至本月）</span><span class="gf-val" style="color:#16A34A">-$${fmt(ar)}</span></div>
-    <div class="gf-row"><span class="gf-key">累計淨欠（截至本月）</span><span class="gf-val">$${fmt(ao-ar)}</span></div>`;
+    <div class="gf-row"><span class="gf-key">本月未還</span><span class="gf-val">$${fmt(monthUnpaid)}</span></div>
+    <div class="gf-row"><span class="gf-key">累計未還（截至本月）</span><span class="gf-val">$${fmt(totalUnpaid)}</span></div>`;
+}
+
+function showGFDueSheet(){
+  const data=loadRecords();
+  const prefix=`${statYear}-${String(statMonth).padStart(2,'0')}`;
+  const items=gfSettlement(data,prefix).items.filter(x=>x.remaining>0);
+  document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 ${statMonth} 月 待還明細`;
+  document.getElementById('mobal-sheet-body').innerHTML=items.length?`
+    <div class="mobal-row-sub" style="margin:-6px 0 10px">依女友還款的主類別 / 子類別自動抵銷同項目分攤支出，不看付款方式；只顯示截至本月仍未還清的項目。</div>
+    ${items.map(item=>{
+      const r=item.record;
+      const status=item.status==='partial'?'部分已還':'待還';
+      return `<div class="gf-detail-item">
+        <div class="gf-detail-main">
+          <div class="gf-detail-title">${htmlEsc(gfRecordTitle(r))}</div>
+          <div class="gf-detail-amount">待還 $${fmt(item.remaining)}</div>
+        </div>
+        <div class="gf-detail-sub">${gfShortDate(r.date)} · ${htmlEsc(r.method||'無')}${r.note?` · ${htmlEsc(r.note)}`:''}</div>
+        <div class="gf-detail-progress ${gfStatusClass(item)}">${status}｜已抵 $${fmt(item.paid)} / 應還 $${fmt(item.due)}</div>
+      </div>`;
+    }).join('')}`:'<div class="empty-state" style="padding:24px 10px"><div class="empty-title">截至本月沒有待還項目</div></div>';
+  document.getElementById('mobal-sheet-overlay').classList.add('open');
 }
 
 function renderLoanTable(data, prefix){
@@ -3747,7 +3853,6 @@ function initBackToTopBtns(){
     el.appendChild(btn);
   };
   document.querySelectorAll('#panel-stats .chart-title').forEach(addBtn);
-  addBtn(document.querySelector('#panel-stats .gf-title'));
   document.querySelectorAll('#panel-settings .settings-section-title').forEach(addBtn);
 }
 function scrollToSection(id){
@@ -3790,8 +3895,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.42';
+const APP_VERSION='2.43';
 const CHANGELOG=[
+  {version:'2.43',date:'2026-06-12',items:[
+    '女友還款改為依主類別與子類別抵銷同項目分攤支出，並在記錄列表與待還明細顯示還款狀態',
+  ]},
   {version:'2.42',date:'2026-06-07',items:[
     '女友統計的累計已還與累計淨欠改為只計算到目前選取月份',
   ]},
