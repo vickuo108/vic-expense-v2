@@ -174,6 +174,12 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .gf-detail-amount{text-align:right;font-weight:800;white-space:nowrap;color:#DC2626}
 .gf-detail-sub{font-size:11px;color:#9BA3AF;margin-top:2px;line-height:1.4}
 .gf-detail-progress{font-size:11px;font-weight:700;margin-top:4px}
+.gf-due-summary{background:#FFF7F9;border:1px solid #FBCFE8;border-radius:12px;padding:8px 10px;margin-bottom:10px}
+.gf-due-summary-title{font-size:11px;font-weight:800;color:#9F1239;margin-bottom:4px}
+.gf-due-summary-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #FCE7F3;font-size:12px}
+.gf-due-summary-row:last-child{border-bottom:none}
+.gf-due-summary-key{color:#374151;font-weight:700;min-width:0}
+.gf-due-summary-val{color:#DC2626;font-weight:800;white-space:nowrap}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;background:#fff;border-radius:12px;padding:4px 10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .month-nav-btn{background:none;border:1.5px solid #E5E7EB;border-radius:8px;padding:2px 9px;cursor:pointer;font-size:15px;color:#374151}
 .month-label{font-size:16px;font-weight:800;color:#1A1A2E}
@@ -1289,6 +1295,24 @@ function gfStatusClass(item){
 }
 function gfRecordTitle(r){
   return [r.main||r.type,r.sub].filter(Boolean).join(' / ')||'女友分攤';
+}
+function gfDueSummaryHTML(items){
+  const map={};
+  items.forEach(item=>{
+    const title=gfRecordTitle(item.record);
+    map[title]=(map[title]||0)+item.remaining;
+  });
+  const rows=Object.entries(map)
+    .sort((a,b)=>a[0].localeCompare(b[0]))
+    .map(([title,amount])=>`
+      <div class="gf-due-summary-row">
+        <div class="gf-due-summary-key">${htmlEsc(title)}</div>
+        <div class="gf-due-summary-val">$${fmt(amount)}</div>
+      </div>`).join('');
+  return `<div class="gf-due-summary">
+    <div class="gf-due-summary-title">主類別 / 子類別統計</div>
+    ${rows}
+  </div>`;
 }
 function gfShortDate(s){
   const [,m,d]=s.split('-').map(Number);
@@ -2947,6 +2971,7 @@ function showGFDueSheet(){
   document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 ${statMonth} 月 待還明細`;
   document.getElementById('mobal-sheet-body').innerHTML=items.length?`
     <div class="mobal-row-sub" style="margin:-6px 0 10px">依女友還款的主類別 / 子類別自動抵銷同項目分攤支出，不看付款方式；只顯示截至本月仍未還清的項目。</div>
+    ${gfDueSummaryHTML(items)}
     ${items.map(item=>{
       const r=item.record;
       const status=item.status==='partial'?'部分已還':'待還';
@@ -3895,8 +3920,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.43';
+const APP_VERSION='2.44';
 const CHANGELOG=[
+  {version:'2.44',date:'2026-06-12',items:[
+    '女友待還明細新增主類別與子類別統計，並依項目名稱排序',
+  ]},
   {version:'2.43',date:'2026-06-12',items:[
     '女友還款改為依主類別與子類別抵銷同項目分攤支出，並在記錄列表與待還明細顯示還款狀態',
   ]},
