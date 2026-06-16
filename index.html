@@ -1270,15 +1270,14 @@ function genId(){ return Date.now().toString(36)+Math.random().toString(36).slic
 // ─── GF helpers ────────────────────────────────────────────────────────────
 function vicShare(amount, split){
   if(split==='repay') return amount;
-  if(split===0) return 0;
-  if(split===1) return amount/2;
-  if(typeof split==='number'&&split>0&&split<1) return amount*split;
+  const gf=gfOwes(amount, split);
+  if(gf>0) return amount<0?-(Math.abs(amount)-gf):Math.abs(amount)-gf;
   return amount;
 }
 function gfOwes(amount, split){
   if(split===0) return Math.abs(amount);
-  if(split===1) return Math.abs(amount)/2;
-  if(typeof split==='number'&&split>0&&split<1) return Math.abs(amount)*(1-split);
+  if(split===1) return Math.round(Math.abs(amount)/2);
+  if(typeof split==='number'&&split>0&&split<1) return Math.round(Math.abs(amount)*(1-split));
   return 0;
 }
 function gfRepaid(amount, split){
@@ -4051,8 +4050,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.46';
+const APP_VERSION='2.47';
 const CHANGELOG=[
+  {version:'2.47',date:'2026-06-16',items:[
+    '女友分攤金額改為逐筆整數化，避免記錄篩選與統計頁差 1 元',
+  ]},
   {version:'2.46',date:'2026-06-16',items:[
     '女友還款抵銷改為只抵同月份、同主類別與子類別的分攤支出',
   ]},
