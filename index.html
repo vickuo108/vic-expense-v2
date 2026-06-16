@@ -2031,9 +2031,14 @@ function renderRecords(){
     if(inc) parts.push(`流入 ${fmt(inc)}`);
     if(exp) parts.push(`流出 ${fmt(Math.abs(exp))}`);
     const activeSplits=[...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')].map(b=>b.dataset.val);
-    if(activeSplits.some(v=>['half','gf'].includes(v))){
+    const showGfShareStats=activeSplits.some(v=>['half','gf'].includes(v));
+    if(showGfShareStats){
       const myTotal=filtered.reduce((s,r)=>s+Math.abs(vicShare(r.amount,r.split)),0);
-      const gfTotal=filtered.reduce((s,r)=>s+gfOwes(r.amount,r.split),0);
+      const gfTotal=filtered.reduce((s,r)=>{
+        if(!gfHasShare(r)) return s;
+        const item=gfSettle.byId[r.id];
+        return s+(item?item.remaining:gfOwes(r.amount,r.split));
+      },0);
       parts.push(`Vic ${fmt(myTotal)}`,`女友 ${fmt(gfTotal)}`);
     }
     sumEl.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');
@@ -2043,7 +2048,10 @@ function renderRecords(){
     filtered.forEach(r=>{
       const m=r.main||r.type||'其他', s=r.sub||'';
       if(!mainMap[m]) mainMap[m]={vic:0,gf:0,subs:{}};
-      const v=vicShare(r.amount,r.split), g=r.amount-v;
+      const v=vicShare(r.amount,r.split);
+      const g=showGfShareStats&&gfHasShare(r)
+        ? (gfSettle.byId[r.id]?.remaining ?? gfOwes(r.amount,r.split))
+        : r.amount-v;
       mainMap[m].vic+=v; mainMap[m].gf+=g;
       if(s){
         if(!mainMap[m].subs[s]) mainMap[m].subs[s]={vic:0,gf:0};
@@ -4051,8 +4059,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.46';
+const APP_VERSION='2.47';
 const CHANGELOG=[
+  {version:'2.47',date:'2026-06-16',items:[
+    '紀錄頁篩選女友相關時，女友總額與類別統計改用女友待還抵銷後金額',
+  ]},
   {version:'2.46',date:'2026-06-16',items:[
     '女友還款抵銷改為只抵同月份、同主類別與子類別的分攤支出',
   ]},
