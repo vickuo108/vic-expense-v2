@@ -1293,8 +1293,11 @@ function gfHasShare(r){
 function gfUntilMonth(prefix){
   return r=>r.date&&r.date.slice(0,7)<=prefix;
 }
+function gfSettleMonth(r){
+  return r.date?r.date.slice(0,7):'';
+}
 function gfSettleKey(r){
-  return `${r.main||''}|||${r.sub||''}`;
+  return `${gfSettleMonth(r)}|||${r.main||''}|||${r.sub||''}`;
 }
 function gfHasSettleKey(r){
   return !!(r.main||r.sub);
@@ -1305,7 +1308,7 @@ function gfSettlement(data, prefix=null){
     .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
     .map(r=>({record:r,due:gfOwes(r.amount,r.split),paid:0,remaining:gfOwes(r.amount,r.split)}));
   const repayPools={};
-  let globalRepayLeft=0;
+  const globalRepayLeft={};
   data.filter(r=>inScope(r)&&r.split==='repay')
     .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
     .forEach(r=>{
@@ -1314,18 +1317,20 @@ function gfSettlement(data, prefix=null){
         const key=gfSettleKey(r);
         repayPools[key]=(repayPools[key]||0)+amt;
       } else {
-        globalRepayLeft+=amt;
+        const month=gfSettleMonth(r);
+        globalRepayLeft[month]=(globalRepayLeft[month]||0)+amt;
       }
     });
   owedItems.forEach(item=>{
     const key=gfSettleKey(item.record);
+    const month=gfSettleMonth(item.record);
     const keyedPaid=Math.min(item.due,repayPools[key]||0);
     item.paid=keyedPaid;
     repayPools[key]=(repayPools[key]||0)-keyedPaid;
-    if(item.paid<item.due&&globalRepayLeft>0){
-      const globalPaid=Math.min(item.due-item.paid,globalRepayLeft);
+    if(item.paid<item.due&&(globalRepayLeft[month]||0)>0){
+      const globalPaid=Math.min(item.due-item.paid,globalRepayLeft[month]);
       item.paid+=globalPaid;
-      globalRepayLeft-=globalPaid;
+      globalRepayLeft[month]-=globalPaid;
     }
     item.remaining=item.due-item.paid;
     item.status=item.remaining<=0?'paid':item.paid>0?'partial':'due';
@@ -1333,7 +1338,8 @@ function gfSettlement(data, prefix=null){
   const byId={};
   owedItems.forEach(item=>{ byId[item.record.id]=item; });
   const keyedOverflow=Object.values(repayPools).reduce((s,n)=>s+Math.max(0,n),0);
-  return {items:owedItems,byId,repayOverflow:globalRepayLeft+keyedOverflow};
+  const globalOverflow=Object.values(globalRepayLeft).reduce((s,n)=>s+Math.max(0,n),0);
+  return {items:owedItems,byId,repayOverflow:globalOverflow+keyedOverflow};
 }
 function gfStatusText(item){
   if(!item) return '';
@@ -3022,7 +3028,7 @@ function showGFDueSheet(){
   const items=gfSettlement(data,prefix).items.filter(x=>x.remaining>0);
   document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 ${statMonth} 月 待還明細`;
   document.getElementById('mobal-sheet-body').innerHTML=items.length?`
-    <div class="mobal-row-sub" style="margin:-6px 0 10px">依女友還款的主類別 / 子類別自動抵銷同項目分攤支出，不看付款方式；只顯示截至本月仍未還清的項目。</div>
+    <div class="mobal-row-sub" style="margin:-6px 0 10px">依女友還款的月份與主類別 / 子類別自動抵銷同月份同項目分攤支出，不看付款方式；只顯示截至本月仍未還清的項目。</div>
     ${gfDueSummaryHTML(items)}
     ${items.map(item=>{
       const r=item.record;
@@ -4045,8 +4051,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.45';
+const APP_VERSION='2.46';
 const CHANGELOG=[
+  {version:'2.46',date:'2026-06-16',items:[
+    '女友還款抵銷改為只抵同月份、同主類別與子類別的分攤支出',
+  ]},
   {version:'2.45',date:'2026-06-15',items:[
     '匯出 JSON 備份時可選擇全部、本月、上月或自訂期間',
   ]},
