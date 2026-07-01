@@ -2005,6 +2005,9 @@ function applyFilters(data){
 }
 
 function amtStr(v){return fmt(Math.abs(v));}
+function catStatHasAmount(d){
+  return Math.round(Math.abs(d?.vic||0))!==0 || Math.round(Math.abs(d?.gf||0))!==0;
+}
 function isGfFiltering(){
   return !![...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')]
     .some(b=>['half','gf','repay'].includes(b.dataset.val));
@@ -2063,19 +2066,20 @@ function renderRecords(){
       }
     });
     const rows=Object.entries(mainMap).map(([m,d])=>{
-      const subRows=Object.entries(d.subs).map(([s,sd])=>`
+      const subRows=Object.entries(d.subs).filter(([,sd])=>catStatHasAmount(sd)).map(([s,sd])=>`
         <div class="cst-row cst-sub-row">
           <span>${s}</span>
           <span class="cst-amt cst-vic">${amtStr(sd.vic)}</span>
           <span class="cst-amt cst-gf">${amtStr(sd.gf)}</span>
         </div>`).join('');
-      return `<div class="cst-row cst-main-row">
+      const mainRow=catStatHasAmount(d)?`<div class="cst-row cst-main-row">
         <span>${m}</span>
         <span class="cst-amt cst-vic">${amtStr(d.vic)}</span>
         <span class="cst-amt cst-gf">${amtStr(d.gf)}</span>
-      </div>${subRows}`;
+      </div>`:'';
+      return `${mainRow}${subRows}`;
     }).join('');
-    if(isGfFiltering()){
+    if(isGfFiltering()&&rows.trim()){
       catEl.innerHTML=`<div class="cat-stats-wrap">
         <div class="cat-stats-title">類別統計</div>
         <div class="cst-row cst-head"><span>類別</span><span class="cst-amt">Vic</span><span class="cst-amt">女友</span></div>
@@ -4063,8 +4067,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.49';
+const APP_VERSION='2.50';
 const CHANGELOG=[
+  {version:'2.50',date:'2026-07-01',items:[
+    '紀錄頁女友相關類別統計不再顯示 Vic 與女友皆為 0 的項目',
+  ]},
   {version:'2.49',date:'2026-06-23',items:[
     '設定頁新增金屬銀介面主題與反光漸層色票',
   ]},
