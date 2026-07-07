@@ -1184,6 +1184,7 @@ const KEY_ACCT_AVAIL= 'vic2_acct_avail';
 const KEY_CC_DUE    = 'vic2_cc_due';
 const KEY_CC_LIMITS = 'vic2_cc_limits';
 const KEY_FIN_PLAN  = 'vic2_fin_plan';
+const KEY_REPORT_STATE='vic2_report_state';
 
 const DEFAULT_CC_LIMITS = [
   {id:'cl01',name:'永豐',amount:150000},{id:'cl02',name:'國泰',amount:120000},
@@ -2384,7 +2385,27 @@ function fixReportPanelHeight(){
 window.addEventListener('resize',()=>{
   if(document.getElementById('panel-report')?.classList.contains('active')) fixReportPanelHeight();
 });
-let reportYear=new Date().getFullYear(), reportMonth=0, repView='year';
+function loadReportState(){
+  const fallback={year:new Date().getFullYear(),month:0};
+  try{
+    const s=JSON.parse(localStorage.getItem(KEY_REPORT_STATE)||'{}');
+    const y=parseInt(s.year,10), m=parseInt(s.month,10);
+    return {
+      year:Number.isInteger(y)&&y>=2000&&y<=2100?y:fallback.year,
+      month:Number.isInteger(m)&&m>=0&&m<=12?m:fallback.month,
+    };
+  }catch{ return fallback; }
+}
+function saveReportState(){
+  localStorage.setItem(KEY_REPORT_STATE,JSON.stringify({year:reportYear,month:reportMonth}));
+}
+function syncReportMonthButtons(){
+  document.querySelectorAll('#rep-month-selector .rep-month-btn').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.m,10)===reportMonth);
+  });
+}
+const _reportState=loadReportState();
+let reportYear=_reportState.year, reportMonth=_reportState.month, repView='year';
 let _repRenderTimer=null;
 function scheduleRenderFinReport(){
   clearTimeout(_repRenderTimer);
@@ -2392,20 +2413,21 @@ function scheduleRenderFinReport(){
 }
 
 function initReportNav(){
-  document.getElementById('rep-prev').addEventListener('click',()=>{ reportYear--; renderFinReport(); });
-  document.getElementById('rep-next').addEventListener('click',()=>{ reportYear++; renderFinReport(); });
+  document.getElementById('rep-prev').addEventListener('click',()=>{ reportYear--; saveReportState(); renderFinReport(); });
+  document.getElementById('rep-next').addEventListener('click',()=>{ reportYear++; saveReportState(); renderFinReport(); });
   document.getElementById('rep-view-year').addEventListener('focusin',e=>{
     if(e.target.classList.contains('rep-budget-input')) clearTimeout(_repRenderTimer);
   });
   const sel=document.getElementById('rep-month-selector');
   const labels=['年度','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  sel.innerHTML=labels.map((l,i)=>`<button class="rep-month-btn${i===0?' active':''}" data-m="${i}" onclick="selectReportMonth(this)">${l}</button>`).join('');
+  sel.innerHTML=labels.map((l,i)=>`<button class="rep-month-btn${i===reportMonth?' active':''}" data-m="${i}" onclick="selectReportMonth(this)">${l}</button>`).join('');
 }
 
 function selectReportMonth(btn){
   document.querySelectorAll('#rep-month-selector .rep-month-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  reportMonth=parseInt(btn.dataset.m);
+  reportMonth=parseInt(btn.dataset.m,10);
+  saveReportState();
   renderFinReport();
 }
 
@@ -2435,6 +2457,7 @@ function copyLastMonthBudget(){
 
 function renderFinReport(){
   document.getElementById('rep-year-label').textContent=`${reportYear} 年`;
+  syncReportMonthButtons();
   if(repView==='qm'){ renderQMReport(); return; }
   const data=loadRecords();
   const isAnnual=reportMonth===0;
@@ -4067,8 +4090,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.50';
+const APP_VERSION='2.51';
 const CHANGELOG=[
+  {version:'2.51',date:'2026-07-07',items:[
+    '報表頁年度報表會記住前次選擇的月份',
+  ]},
   {version:'2.50',date:'2026-07-01',items:[
     '紀錄頁女友相關類別統計不再顯示 Vic 與女友皆為 0 的項目',
   ]},
