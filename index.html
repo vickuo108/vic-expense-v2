@@ -4090,8 +4090,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.52';
+const APP_VERSION='2.53';
 const CHANGELOG=[
+  {version:'2.53',date:'2026-07-18',items:[
+    '自動修正 2026/01/01 至 2026/04/30 匯入紀錄的舊主類別名稱',
+  ]},
   {version:'2.52',date:'2026-07-10',items:[
     '複製紀錄時保留原本日期，不再自動改成今天',
   ]},
@@ -4637,6 +4640,46 @@ async function syncFromCloud(){
   } catch(e){ _isSyncing=false; setSyncDot('error'); }
 }
 
+const KEY_MIGRATE_2026_IMPORTED_MAIN_CATS='vic2_migrate_2026_imported_main_cats_v1';
+async function migrateImportedMainCategories2026(){
+  if(!_fbUser||_fbUser.email!=='vickuo108@gmail.com') return;
+  if(localStorage.getItem(KEY_MIGRATE_2026_IMPORTED_MAIN_CATS)) return;
+
+  const replacements={
+    '生活居家用品':'生活居家',
+    '零食、飲料':'休閒食品',
+  };
+  const start='2026-01-01';
+  const end='2026-04-30';
+  const records=loadRecords();
+  const counts={};
+  let changed=0;
+
+  records.forEach(r=>{
+    if(!r||!r.date||r.date<start||r.date>end) return;
+    const next=replacements[r.main];
+    if(!next) return;
+    const key=`${r.main}->${next}`;
+    counts[key]=(counts[key]||0)+1;
+    r.main=next;
+    changed++;
+  });
+
+  localStorage.setItem(KEY_MIGRATE_2026_IMPORTED_MAIN_CATS, JSON.stringify({
+    ran_at:new Date().toISOString(),
+    changed,
+    counts,
+  }));
+
+  if(!changed) return;
+  saveRecords(records);
+  renderRecords(); renderStats(); renderAllSettingsEditors(); updateHeaderSub();
+  populateAddForm(); populateEditForm(); populateFilterDropdowns();
+  if(document.getElementById('panel-report')?.classList.contains('active')) renderFinReport();
+  await syncToCloud();
+  showToast(`✅ 已修正 ${changed} 筆舊主類別`);
+}
+
 async function manualSync(){
   if(!_fbUser){ showToast('請先登入後再同步'); return; }
   showToast('☁️ 同步中...'); await syncFromCloud(); await syncToCloud(); showToast('✅ 同步完成');
@@ -4737,6 +4780,7 @@ _auth.onAuthStateChanged(async user=>{
     const overlay=document.getElementById('login-overlay');
     overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await syncFromCloud();
+    await migrateImportedMainCategories2026();
   } else {
     localStorage.removeItem(KEY_LAST_ACTIVE);
     const overlay=document.getElementById('login-overlay');
