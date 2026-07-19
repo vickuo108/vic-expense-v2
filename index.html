@@ -1822,12 +1822,10 @@ function initFormListeners(){
 
 function autoFillAmtSign(){
   const t=document.getElementById('f-type').value;
-  const main=document.getElementById('f-main').value;
   const el=document.getElementById('f-amount');
-  const isPlanTransfer=t==='內部轉帳'&&isFinPlanName(main);
-  const shouldNegative=(t==='費用'||t==='成本'||t==='清償負債'||t==='投資'||(t==='內部轉帳'&&!isPlanTransfer));
+  const shouldNegative=(t==='費用'||t==='成本'||t==='清償負債'||t==='投資'||t==='內部轉帳');
   if(shouldNegative&&el.value==='') el.value='-';
-  if((!shouldNegative||isPlanTransfer)&&el.value==='-') el.value='';
+  if(!shouldNegative&&el.value==='-') el.value='';
 }
 function calcLoanInterest(prefix){
   const amt=parseAmt(document.getElementById(`${prefix}-amount`).value);
@@ -4090,8 +4088,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.53';
+const APP_VERSION='2.54';
 const CHANGELOG=[
+  {version:'2.54',date:'2026-07-19',items:[
+    '內部轉帳選擇財務規劃帳戶時，金額欄會預設負號',
+  ]},
   {version:'2.53',date:'2026-07-18',items:[
     '自動修正 2026/01/01 至 2026/04/30 匯入紀錄的舊主類別名稱',
   ]},
