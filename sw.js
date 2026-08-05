@@ -1,4 +1,4 @@
-const CACHE = 'vic-v2-67';
+const CACHE = 'vic-v2-68';
 const APP_SHELL = ['./', './index.html'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP_SHELL)));
