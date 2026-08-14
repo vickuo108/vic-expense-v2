@@ -1,8 +1,8 @@
-const CACHE = 'vic-v2-72';
+const CACHE = 'vic-v2-73';
 const APP_SHELL = ['./', './index.html'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP_SHELL)));
-  // 不再自動 skipWaiting，等使用者點擊「立即更新」再切換
+  self.skipWaiting();
 });
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys()
