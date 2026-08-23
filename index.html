@@ -1433,16 +1433,13 @@ function gfSettlement(data, prefix=null){
   });
 
   let repayOverflow=0;
-  data.filter(r=>inScope(r)&&r.split==='repay')
+  data.filter(r=>r.split==='repay')
     .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
     .forEach(r=>{
       let left=gfRepaid(r.amount,r.split);
-      if(!gfHasSettleKey(r)){
-        repayOverflow+=left;
-        return;
-      }
       const key=gfSettleKey(r);
-      (owedByKey[key]||[]).forEach(item=>{
+      const targets=gfHasSettleKey(r)?(owedByKey[key]||[]):owedItems;
+      targets.forEach(item=>{
         if(left<=0) return;
         if(item.record.date&&r.date&&item.record.date>r.date) return;
         const paid=Math.min(item.remaining,left);
@@ -1459,6 +1456,27 @@ function gfSettlement(data, prefix=null){
   const byId={};
   owedItems.forEach(item=>{ byId[item.record.id]=item; });
   return {items:owedItems,byId,repayOverflow};
+}
+function gfNextRepayTarget(data, repayDate='', main='', sub=''){
+  const prefix=repayDate?repayDate.slice(0,7):null;
+  const key=(main||sub)?`${main||''}|||${sub||''}`:null;
+  return gfSettlement(data,prefix).items
+    .filter(gfHasOutstanding)
+    .filter(item=>!repayDate||!item.record.date||item.record.date<=repayDate)
+    .filter(item=>!key||gfSettleKey(item.record)===key)
+    .sort((a,b)=>a.record.date.localeCompare(b.record.date)||a.record.id.localeCompare(b.record.id))[0]||null;
+}
+function reportAdjustedAmount(r, gfSettle){
+  if(r.split==='repay') return 0;
+  if(!gfHasShare(r)) return r.amount;
+  const paid=Math.min(Math.abs(r.amount),gfSettle.byId[r.id]?.paid||0);
+  return r.amount+paid;
+}
+function reportAdjustedRecords(data){
+  const gfSettle=gfSettlement(data);
+  return data
+    .map(r=>({...r,amount:reportAdjustedAmount(r,gfSettle)}))
+    .filter(r=>Math.round(Math.abs(r.amount||0))!==0);
 }
 function gfStatusText(item){
   if(!item) return '';
@@ -1623,7 +1641,7 @@ function loadAppTitle(){
 }
 
 function updateHeaderSub(){
-  const data=loadRecords();
+  const data=reportAdjustedRecords(loadRecords());
   const year=localDateStr().slice(0,4);
   const yd=data.filter(r=>r.date.startsWith(year));
   const exp=yd.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
@@ -1739,8 +1757,8 @@ function populateAddForm(){
 function populateEditForm(){
   fillSelect(document.getElementById('e-type'), DEFAULT_TYPES);
   fillMethodSelect(document.getElementById('e-method'));
-  fillEditMainSelect(document.getElementById('e-main'));
-  fillEditSubSelect(document.getElementById('e-sub'));
+  fillMainSelect(document.getElementById('e-main'));
+  fillSelect(document.getElementById('e-sub'), [], '（選填）');
 }
 
 function ensureSelectOption(el,value){
@@ -2111,6 +2129,7 @@ function initFormListeners(){
     if(main==='貸款') applyLoanDefaults();
     else { lpEl.value=''; document.getElementById('f-loan-i').value=''; }
     autoFillAmtSign();
+    updateSharePreview();
   });
   subEl.addEventListener('change',()=>{
     if(mainEl.value==='貸款'&&subEl.value){
@@ -2125,10 +2144,15 @@ function initFormListeners(){
         if(item&&item.amount) amtEl.value=fmtInput(-Math.abs(item.amount));
       }
     }
+    updateSharePreview();
     updateInstallPreview();
   });
 
-  document.getElementById('f-date').addEventListener('change',()=>{ if(mainEl.value==='貸款') applyLoanDefaults(!!subEl.value); });
+  document.getElementById('f-date').addEventListener('change',()=>{
+    if(mainEl.value==='貸款') applyLoanDefaults(!!subEl.value);
+    if(addSplit==='repay') applyGFRepayTargetDefaults();
+    updateSharePreview();
+  });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'f'));
   amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); });
   amtEl.addEventListener('blur',()=>{ updateSharePreview(); updateInstallPreview(); });
@@ -2157,6 +2181,7 @@ function initFormListeners(){
         btn.classList.add('active');
         fWrap.style.display='none';
         addSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
+        if(addSplit==='repay') applyGFRepayTargetDefaults();
       }
       updateSharePreview();
     });
@@ -2227,12 +2252,39 @@ function updateSharePreview(){
   if(addSplit===null||amt===0){ prev.classList.remove('show'); return; }
   prev.classList.add('show');
   if(addSplit==='repay'){
+    const date=document.getElementById('f-date').value;
+    const main=document.getElementById('f-main').value;
+    const sub=document.getElementById('f-sub').value;
+    const target=gfNextRepayTarget(loadRecords(),date,main,sub);
     prev.style.cssText='background:#F0FDF4;border-color:#BBF7D0;color:#15803D';
-    prev.textContent=`女友已分攤 ${fmt(Math.abs(amt))}，從累計欠款中扣除`;
+    prev.textContent=target
+      ?`女友已分攤 ${fmt(Math.abs(amt))}，優先抵銷 ${gfShortDate(target.record.date)} ${gfRecordTitle(target.record)}`
+      :`女友已分攤 ${fmt(Math.abs(amt))}，目前找不到同項目待還`;
   } else {
     prev.style.cssText='';
     const vic=vicShare(amt,addSplit), gf=gfOwes(amt,addSplit);
     prev.textContent=`Vic 實際支出：${fmt(Math.abs(vic))}　女友應還：${fmt(gf)}`;
+  }
+}
+
+function applyGFRepayTargetDefaults(){
+  const date=document.getElementById('f-date').value;
+  const mainEl=document.getElementById('f-main');
+  const subEl=document.getElementById('f-sub');
+  const amtEl=document.getElementById('f-amount');
+  const target=gfNextRepayTarget(loadRecords(),date,mainEl.value,subEl.value)
+    ||gfNextRepayTarget(loadRecords(),date);
+  if(!target) return;
+  const r=target.record;
+  if(!mainEl.value&&r.main&&[...mainEl.options].some(op=>op.value===r.main)){
+    mainEl.value=r.main;
+    updateSubByMain(r.main,subEl);
+  }
+  if(!subEl.value&&r.sub&&[...subEl.options].some(op=>op.value===r.sub)){
+    subEl.value=r.sub;
+  }
+  if(amtEl.value===''||amtEl.value==='-'){
+    amtEl.value=fmtInput(Math.round(target.remaining));
   }
 }
 
@@ -2619,15 +2671,29 @@ function copyRecord(id){
 // ─── Edit Modal ────────────────────────────────────────────────────────────
 function initEditListeners(){
   const mainEl=document.getElementById('e-main');
+  const subEl=document.getElementById('e-sub');
   const lpEl=document.getElementById('e-loan-p');
   mainEl.addEventListener('change',()=>{
+    updateSubByMain(mainEl.value,subEl);
     document.getElementById('e-loan-extra').style.display=mainEl.value==='貸款'?'block':'none';
   });
   document.getElementById('e-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
+    const typeVal=document.getElementById('e-type').value;
+    const curMain=mainEl.value;
+    fillMainSelect(mainEl,methodVal,true,typeVal);
+    if([...mainEl.options].some(op=>op.value===curMain)) mainEl.value=curMain;
+    else mainEl.value='';
+    updateSubByMain(mainEl.value,subEl);
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     if(!isCC) resetInstall('e');
+  });
+  document.getElementById('e-type').addEventListener('change',()=>{
+    const typeVal=document.getElementById('e-type').value;
+    fillMethodSelect(document.getElementById('e-method'),typeVal);
+    fillMainSelect(mainEl,document.getElementById('e-method').value,true,typeVal);
+    updateSubByMain(mainEl.value,subEl);
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
   document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
@@ -2649,13 +2715,13 @@ function openEdit(id){
   populateEditForm();
   document.getElementById('e-date').value=r.date;
   document.getElementById('e-type').value=r.type;
-  fillMethodSelect(document.getElementById('e-method'));
+  fillMethodSelect(document.getElementById('e-method'),r.type);
   ensureSelectOption(document.getElementById('e-method'),r.method);
   document.getElementById('e-method').value=r.method;
-  fillEditMainSelect(document.getElementById('e-main'));
+  fillMainSelect(document.getElementById('e-main'),r.method,true,r.type);
   ensureSelectOption(document.getElementById('e-main'),r.main||'');
   document.getElementById('e-main').value=r.main||'';
-  fillEditSubSelect(document.getElementById('e-sub'));
+  updateSubByMain(r.main||'',document.getElementById('e-sub'));
   ensureSelectOption(document.getElementById('e-sub'),r.sub||'');
   document.getElementById('e-sub').value=r.sub||'';
   document.getElementById('e-amount').value=fmtInput(r.amount);
@@ -2880,7 +2946,7 @@ function renderFinReport(){
     renderQMReport();
     return;
   }
-  const data=loadRecords();
+  const data=reportAdjustedRecords(loadRecords());
   const isAnnual=reportMonth===0;
   document.querySelector('#rep-view-year thead tr').innerHTML=isAnnual
     ? '<th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th><th>收入佔比</th><th>各項佔比</th>'
@@ -3011,7 +3077,7 @@ function populateCreditCardReportFilters(){
 function getCreditCardReportRecords(){
   const cards=new Set(loadMG()['信用卡']||[]);
   const pfx=reportMonth===0?`${reportYear}-`:`${reportYear}-${String(reportMonth).padStart(2,'0')}`;
-  return loadRecords()
+  return reportAdjustedRecords(loadRecords())
     .filter(r=>r.date&&r.date.startsWith(pfx))
     .filter(r=>cards.has(r.method))
     .filter(r=>r.type!=='清償負債'&&r.main!=='繳信用卡款'&&r.amount<0)
@@ -3139,7 +3205,7 @@ function renderCreditCardDetailTable(rows,idx){
 }
 
 function renderQMReport(){
-  const data=loadRecords();
+  const data=reportAdjustedRecords(loadRecords());
   const fixed=loadFixed();
   const floatCats=Object.keys(loadCats()); const incCats=loadIncome();
   const costMains=[...new Set(data.filter(r=>r.type==='成本'&&r.main).map(r=>r.main))];
@@ -3847,14 +3913,14 @@ function renderBankSection(data, prefix){
 function renderGFSummary(data, prefix){
   const settle=gfSettlement(data,prefix);
   const mo=settle.items.filter(x=>x.record.date.startsWith(prefix)).reduce((s,x)=>s+x.due,0);
-  const mr=data.filter(r=>r.date.startsWith(prefix)&&r.split==='repay').reduce((s,r)=>s+gfRepaid(r.amount,r.split),0);
+  const mr=settle.items.filter(x=>x.record.date.startsWith(prefix)).reduce((s,x)=>s+x.paid,0);
   const monthUnpaid=settle.items.filter(x=>x.record.date.startsWith(prefix)).reduce((s,x)=>s+x.remaining,0);
   const totalUnpaid=settle.items.reduce((s,x)=>s+x.remaining,0);
   document.getElementById('gf-rows').innerHTML=`
     <div class="gf-row"><span class="gf-key">本月應還</span><span class="gf-val">$${fmt(mo)}</span></div>
-    <div class="gf-row"><span class="gf-key">本月已還</span><span class="gf-val" style="color:#16A34A">-$${fmt(mr)}</span></div>
+    <div class="gf-row"><span class="gf-key">本月已還</span><span class="gf-val" style="color:#16A34A">$${fmt(mr)}</span></div>
     <div class="gf-row"><span class="gf-key">本月未還</span><span class="gf-val">$${fmt(monthUnpaid)}</span></div>
-    <div class="gf-row"><span class="gf-key">累計未還（截至本月）</span><span class="gf-val">$${fmt(totalUnpaid)}</span></div>`;
+    <div class="gf-row"><span class="gf-key">累計未還（本月以前項目）</span><span class="gf-val">$${fmt(totalUnpaid)}</span></div>`;
 }
 
 function showGFDueSheet(){
@@ -3863,7 +3929,7 @@ function showGFDueSheet(){
   const items=gfSettlement(data,prefix).items.filter(gfHasOutstanding);
   document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 ${statMonth} 月 待還明細`;
   document.getElementById('mobal-sheet-body').innerHTML=items.length?`
-    <div class="mobal-row-sub" style="margin:-6px 0 10px">依女友還款的主類別 / 子類別，按支出日期由舊到新自動抵銷同項目分攤支出，不看付款方式；只顯示截至本月仍未還清的項目。</div>
+    <div class="mobal-row-sub" style="margin:-6px 0 10px">列出截至本月產生、目前仍未還清的項目；女友還款會依主類別 / 子類別，按支出日期由舊到新自動抵銷同項目分攤支出，不看付款方式。</div>
     ${gfDueSummaryHTML(items)}
     ${items.map(item=>{
       const r=item.record;
@@ -3876,7 +3942,7 @@ function showGFDueSheet(){
         <div class="gf-detail-sub">${gfShortDate(r.date)} · ${htmlEsc(r.method||'無')}${r.note?` · ${htmlEsc(r.note)}`:''}</div>
         <div class="gf-detail-progress ${gfStatusClass(item)}">${status}｜已抵 $${fmt(item.paid)} / 應還 $${fmt(item.due)}</div>
       </div>`;
-    }).join('')}`:'<div class="empty-state" style="padding:24px 10px"><div class="empty-title">截至本月沒有待還項目</div></div>';
+    }).join('')}`:'<div class="empty-state" style="padding:24px 10px"><div class="empty-title">截至本月產生的項目目前都已還清</div></div>';
   document.getElementById('mobal-sheet-overlay').classList.add('open');
 }
 
@@ -4887,8 +4953,15 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.73';
+const APP_VERSION='2.74';
 const CHANGELOG=[
+  {version:'2.74',date:'2026-08-24',items:[
+    '女友償還會優先抵銷最早日期的待還項目，6 月產生的待還也會被 8 月同項目還款正確扣除',
+    '女友區本月已還改依實際抵銷到的支出月份歸屬，不再用入帳月份直接計入',
+    '報表頁金額改用女友償還後的淨支出，已償還的女友分攤金額不再算入自己的花費',
+    '編輯記帳時主類別與子類別改為和新增頁一致，子類別會依目前主類別連動顯示',
+    '按下女友已分攤時，未選主類別與子類別也會自動帶入最早待還項目',
+  ]},
   {version:'2.73',date:'2026-08-14',items:[
     'App 偵測到新版本時會自動套用並重新載入，不需要再手動按立即更新',
   ]},
