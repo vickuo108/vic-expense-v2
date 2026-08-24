@@ -2193,25 +2193,14 @@ function initFormListeners(){
 
   document.getElementById('f-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('f-method').value;
-    const typeVal=document.getElementById('f-type').value;
-    const mainEl=document.getElementById('f-main');
-    const curMain=mainEl.value;
-    fillMainSelect(mainEl, methodVal, true, typeVal);
-    mainEl.value=curMain;
-    updateSubByMain(mainEl.value, document.getElementById('f-sub'));
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
   });
   document.getElementById('f-type').addEventListener('change',()=>{
     autoFillAmtSign();
-    const typeVal=document.getElementById('f-type').value;
-    fillMethodSelect(document.getElementById('f-method'), typeVal);
-    fillMainSelect(document.getElementById('f-main'), '', true, typeVal);
-    fillSelect(document.getElementById('f-sub'), [], '（選填）');
-    // 切換類型後付款方式可能改變，重新判斷是否顯示分期欄位
-    const newMethod=document.getElementById('f-method').value;
-    const isCC=isCCMethod(newMethod);
+    const methodVal=document.getElementById('f-method').value;
+    const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
   });
@@ -2679,21 +2668,14 @@ function initEditListeners(){
   });
   document.getElementById('e-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
-    const typeVal=document.getElementById('e-type').value;
-    const curMain=mainEl.value;
-    fillMainSelect(mainEl,methodVal,true,typeVal);
-    if([...mainEl.options].some(op=>op.value===curMain)) mainEl.value=curMain;
-    else mainEl.value='';
-    updateSubByMain(mainEl.value,subEl);
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     if(!isCC) resetInstall('e');
   });
   document.getElementById('e-type').addEventListener('change',()=>{
-    const typeVal=document.getElementById('e-type').value;
-    fillMethodSelect(document.getElementById('e-method'),typeVal);
-    fillMainSelect(mainEl,document.getElementById('e-method').value,true,typeVal);
-    updateSubByMain(mainEl.value,subEl);
+    const methodVal=document.getElementById('e-method').value;
+    const isCC=isCCMethod(methodVal);
+    document.getElementById('e-install-extra').style.display=isCC?'block':'none';
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
   document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
@@ -4953,8 +4935,12 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.74';
+const APP_VERSION='2.75';
 const CHANGELOG=[
+  {version:'2.75',date:'2026-08-24',items:[
+    '編輯記帳時欄位改為互相獨立，變更付款方式或分類不會再連動修改主類別與子類別',
+    '新增記帳時欄位也改為互相獨立，變更付款方式或分類不會再重設主類別與子類別',
+  ]},
   {version:'2.74',date:'2026-08-24',items:[
     '女友償還會優先抵銷最早日期的待還項目，6 月產生的待還也會被 8 月同項目還款正確扣除',
     '女友區本月已還改依實際抵銷到的支出月份歸屬，不再用入帳月份直接計入',
