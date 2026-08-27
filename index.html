@@ -1731,13 +1731,19 @@ function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
 }
 
 function isFinPlanName(name){ return loadFinPlan().some(p=>p.name===name); }
+function typeForSubSelect(subEl){
+  const prefix=(subEl?.id||'').split('-')[0];
+  const typeEl=prefix?document.getElementById(`${prefix}-type`):null;
+  return typeEl?.value||'';
+}
 function updateSubByMain(main, subEl, blank=true){
   const cats=loadCats(); const fixed=loadFixed(); const loans=loadLoans();
   const mg=loadMG(); const plans=loadFinPlan();
   const bank=mg['銀行帳戶']||[]; const ew=mg['電子錢包']||[]; const cc=mg['信用卡']||[];
+  const typeVal=typeForSubSelect(subEl);
   if(main==='固定支出') fillSelect(subEl, fixed.map(f=>f.name), blank?'（選填）':'');
   else if(main==='貸款') fillSelect(subEl, loans.map(l=>l.name), blank?'（選填）':'');
-  else if(main==='轉帳') fillSelect(subEl, ['轉帳手續費',...bank,...ew], blank?'（選填）':'');
+  else if(main==='轉帳') fillSelect(subEl, [...(typeVal==='內部轉帳'?[]:['轉帳手續費']),...bank,...ew], blank?'（選填）':'');
   else if(main==='加值') fillSelect(subEl, ['現金',...bank,...ew,...cc], blank?'（選填）':'');
   else if(main==='繳信用卡款') fillSelect(subEl, cc, blank?'（選填）':'');
   else if(plans.some(p=>p.name===main)) fillSelect(subEl, [...bank,...ew], blank?'（選填）':'');
@@ -1836,14 +1842,14 @@ function fillEditSubSelect(el){
   fillSelect(el,[...new Set(opts.filter(Boolean))],'（選填）');
 }
 
-function filterSubOptions(main=''){
+function filterSubOptions(main='',typeVal=''){
   const cats=loadCats(); const fixed=loadFixed(); const loans=loadLoans(); const mg=loadMG(); const plans=loadFinPlan();
   const bank=mg['銀行帳戶']||[], ew=mg['電子錢包']||[], cc=mg['信用卡']||[];
   let opts=[];
   if(main){
     if(main==='固定支出') opts=fixed.map(f=>f.name);
     else if(main==='貸款') opts=loans.map(l=>l.name);
-    else if(main==='轉帳') opts=['轉帳手續費',...bank,...ew];
+    else if(main==='轉帳') opts=[...(typeVal==='內部轉帳'?[]:['轉帳手續費']),...bank,...ew];
     else if(main==='加值') opts=['現金',...bank,...ew,...cc];
     else if(main==='繳信用卡款') opts=cc;
     else if(plans.some(p=>p.name===main)) opts=[...bank,...ew];
@@ -4987,8 +4993,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.76';
+const APP_VERSION='2.77';
 const CHANGELOG=[
+  {version:'2.77',date:'2026-08-27',items:[
+    '分類為內部轉帳且主類別為轉帳時，子類別移除轉帳手續費，避免與費用分類的手續費重複',
+  ]},
   {version:'2.76',date:'2026-08-27',items:[
     '修正新增與編輯切換付款方式或分類時，主類別選單會保留原本可用規則，內部轉帳的銀行帳戶操作、電子錢包操作與財務規劃會正常顯示',
     '清償負債的主類別恢復硬限制，只會顯示繳信用卡款與貸款，不再保留其他分類殘值',
