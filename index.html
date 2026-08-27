@@ -1684,7 +1684,7 @@ function getMethodGroup(methodVal){
 }
 
 function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
-  el.innerHTML=blank?'<option value="">（選填）</option>':'';
+  el.innerHTML=blank&&!isRequiredMainType(typeVal)?'<option value="">（選填）</option>':'';
   const cats=loadCats(); const income=loadIncome(); const plans=loadFinPlan();
   if(typeVal==='收入'){
     const g=document.createElement('optgroup'); g.label='收入';
@@ -1767,6 +1767,40 @@ function ensureSelectOption(el,value){
   op.value=value;
   op.textContent=value;
   el.appendChild(op);
+}
+
+function selectHasValue(el,value){
+  return !!el&&!!value&&[...el.options].some(op=>op.value===value);
+}
+
+function isRequiredMainType(typeVal){
+  return ['清償負債','內部轉帳'].includes(typeVal);
+}
+
+function firstSelectValue(el){
+  const op=el?[...el.options].find(o=>o.value):null;
+  return op?op.value:'';
+}
+
+function refreshMainSelectKeepValues(prefix){
+  const typeEl=document.getElementById(`${prefix}-type`);
+  const methodEl=document.getElementById(`${prefix}-method`);
+  const mainEl=document.getElementById(`${prefix}-main`);
+  const subEl=document.getElementById(`${prefix}-sub`);
+  if(!typeEl||!methodEl||!mainEl||!subEl) return;
+  const curMain=mainEl.value;
+  const curSub=subEl.value;
+  fillMainSelect(mainEl,methodEl.value,true,typeEl.value);
+  if(selectHasValue(mainEl,curMain)){
+    mainEl.value=curMain;
+    updateSubByMain(curMain,subEl);
+    if(selectHasValue(subEl,curSub)) subEl.value=curSub;
+    else subEl.value='';
+  } else {
+    mainEl.value=isRequiredMainType(typeEl.value)?firstSelectValue(mainEl):'';
+    if(mainEl.value) updateSubByMain(mainEl.value,subEl);
+    else fillSelect(subEl,[],'（選填）');
+  }
 }
 
 function appendEditOption(group,value,seen){
@@ -2193,6 +2227,7 @@ function initFormListeners(){
 
   document.getElementById('f-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('f-method').value;
+    refreshMainSelectKeepValues('f');
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
@@ -2200,6 +2235,7 @@ function initFormListeners(){
   document.getElementById('f-type').addEventListener('change',()=>{
     autoFillAmtSign();
     const methodVal=document.getElementById('f-method').value;
+    refreshMainSelectKeepValues('f');
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
@@ -2668,12 +2704,14 @@ function initEditListeners(){
   });
   document.getElementById('e-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
+    refreshMainSelectKeepValues('e');
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     if(!isCC) resetInstall('e');
   });
   document.getElementById('e-type').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
+    refreshMainSelectKeepValues('e');
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
   });
@@ -2700,12 +2738,26 @@ function openEdit(id){
   fillMethodSelect(document.getElementById('e-method'),r.type);
   ensureSelectOption(document.getElementById('e-method'),r.method);
   document.getElementById('e-method').value=r.method;
-  fillMainSelect(document.getElementById('e-main'),r.method,true,r.type);
-  ensureSelectOption(document.getElementById('e-main'),r.main||'');
-  document.getElementById('e-main').value=r.main||'';
-  updateSubByMain(r.main||'',document.getElementById('e-sub'));
-  ensureSelectOption(document.getElementById('e-sub'),r.sub||'');
-  document.getElementById('e-sub').value=r.sub||'';
+  const mainEl=document.getElementById('e-main');
+  const subEl=document.getElementById('e-sub');
+  fillMainSelect(mainEl,r.method,true,r.type);
+  if(selectHasValue(mainEl,r.main||'')){
+    mainEl.value=r.main||'';
+  } else if(isRequiredMainType(r.type)){
+    mainEl.value=firstSelectValue(mainEl);
+  } else {
+    ensureSelectOption(mainEl,r.main||'');
+    mainEl.value=r.main||'';
+  }
+  updateSubByMain(mainEl.value,subEl);
+  if(selectHasValue(subEl,r.sub||'')){
+    subEl.value=r.sub||'';
+  } else if(isRequiredMainType(r.type)){
+    subEl.value='';
+  } else {
+    ensureSelectOption(subEl,r.sub||'');
+    subEl.value=r.sub||'';
+  }
   document.getElementById('e-amount').value=fmtInput(r.amount);
   document.getElementById('e-note').value=r.note||'';
   const installExtra=document.getElementById('e-install-extra');
@@ -4935,8 +4987,12 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.75';
+const APP_VERSION='2.76';
 const CHANGELOG=[
+  {version:'2.76',date:'2026-08-27',items:[
+    '修正新增與編輯切換付款方式或分類時，主類別選單會保留原本可用規則，內部轉帳的銀行帳戶操作、電子錢包操作與財務規劃會正常顯示',
+    '清償負債的主類別恢復硬限制，只會顯示繳信用卡款與貸款，不再保留其他分類殘值',
+  ]},
   {version:'2.75',date:'2026-08-24',items:[
     '編輯記帳時欄位改為互相獨立，變更付款方式或分類不會再連動修改主類別與子類別',
     '新增記帳時欄位也改為互相獨立，變更付款方式或分類不會再重設主類別與子類別',
