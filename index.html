@@ -710,6 +710,8 @@ input[type=number]{-moz-appearance:textfield}
             <input type="date" class="filter-select" id="filter-to" min="1000-01-01" max="9999-12-31" style="font-size:13px">
           </div>
           <div class="date-filter-pills">
+            <button class="date-filter-pill" type="button" onclick="applyRecordMonthFilter('today')">今日</button>
+            <button class="date-filter-pill" type="button" onclick="applyRecordMonthFilter('yesterday')">昨日</button>
             <button class="date-filter-pill" type="button" onclick="applyRecordMonthFilter('current')">本月</button>
             <button class="date-filter-pill" type="button" onclick="applyRecordMonthFilter('prev')">上月</button>
           </div>
@@ -2425,6 +2427,15 @@ function dateInputStr(d){
 }
 function applyRecordMonthFilter(which){
   const now=new Date();
+  if(which==='today'||which==='yesterday'){
+    const date=new Date(now.getFullYear(),now.getMonth(),now.getDate()-(which==='yesterday'?1:0));
+    const value=dateInputStr(date);
+    document.getElementById('filter-from').value=value;
+    document.getElementById('filter-to').value=value;
+    syncRecordYearMonthFilters();
+    renderRecords(); updateClearBtn();
+    return;
+  }
   const offset=which==='prev'?-1:0;
   const start=new Date(now.getFullYear(),now.getMonth()+offset,1);
   const end=new Date(now.getFullYear(),now.getMonth()+offset+1,0);
@@ -4993,8 +5004,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.77';
+const APP_VERSION='2.78';
 const CHANGELOG=[
+  {version:'2.78',date:'2026-09-10',items:[
+    '記錄頁篩選新增今日與昨日快捷按鈕，可一鍵套用單日日期範圍',
+  ]},
   {version:'2.77',date:'2026-08-27',items:[
     '分類為內部轉帳且主類別為轉帳時，子類別移除轉帳手續費，避免與費用分類的手續費重複',
   ]},
