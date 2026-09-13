@@ -1384,18 +1384,26 @@ function saveMonthBudgetItem(ym,cat,val){
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
 // ─── GF helpers ────────────────────────────────────────────────────────────
+function gfShareRatio(split){
+  if(split===0) return 1;
+  if(split===1) return 0.5;
+  if(typeof split==='number'&&split>0&&split<1) return 1-split;
+  return 0;
+}
 function vicShare(amount, split){
   if(split==='repay') return amount;
   if(split===0) return 0;
-  if(split===1) return amount/2;
-  if(typeof split==='number'&&split>0&&split<1) return amount*split;
+  const ratio=gfShareRatio(split);
+  if(ratio>0){
+    const gf=Math.floor(Math.abs(amount)*ratio);
+    const vic=Math.abs(amount)-gf;
+    return amount<0?-vic:vic;
+  }
   return amount;
 }
 function gfOwes(amount, split){
-  if(split===0) return Math.abs(amount);
-  if(split===1) return Math.abs(amount)/2;
-  if(typeof split==='number'&&split>0&&split<1) return Math.abs(amount)*(1-split);
-  return 0;
+  const ratio=gfShareRatio(split);
+  return ratio>0?Math.floor(Math.abs(amount)*ratio):0;
 }
 function gfRepaid(amount, split){
   return split==='repay'?Math.abs(amount):0;
@@ -5004,8 +5012,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.78';
+const APP_VERSION='2.79';
 const CHANGELOG=[
+  {version:'2.79',date:'2026-09-13',items:[
+    '女友分攤改為整數計算，遇到 1 元差額時由 Vic 承擔，不再出現 0.5 元分攤',
+  ]},
   {version:'2.78',date:'2026-09-10',items:[
     '記錄頁篩選新增今日與昨日快捷按鈕，可一鍵套用單日日期範圍',
   ]},
