@@ -5018,8 +5018,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.82';
+const APP_VERSION='2.83';
 const CHANGELOG=[
+  {version:'2.83',date:'2026-09-17',items:[
+    'Google 登入/連結在手機上一律改用整頁跳轉，並加上錯誤訊息顯示，避免按鈕按下去沒反應',
+  ]},
   {version:'2.82',date:'2026-09-17',items:[
     '修正加到主畫面（PWA 獨立模式）下 Google 登入/連結出現「requested action is invalid」的問題，改用整頁跳轉方式驗證',
   ]},
@@ -5598,6 +5601,7 @@ _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
 const _isStandalonePWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+const _useRedirectAuth = _isStandalonePWA || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 _auth.getRedirectResult().then(result=>{
   if(result&&result.user) showToast('✅ Google 登入/連結完成');
@@ -5607,6 +5611,8 @@ _auth.getRedirectResult().then(result=>{
   } else if(e.code==='auth/account-exists-with-different-credential'){
     const errEl=document.getElementById('login-error');
     if(errEl) errEl.textContent='此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
+  } else if(e.code){
+    alert('Google 登入/連結時發生錯誤：'+e.code);
   }
 });
 
@@ -5804,7 +5810,11 @@ function googleProvider(){ return new firebase.auth.GoogleAuthProvider(); }
 async function doGoogleSignIn(){
   const errEl=document.getElementById('login-error');
   errEl.style.color='#EF4444'; errEl.textContent='';
-  if(_isStandalonePWA){ await _auth.signInWithRedirect(googleProvider()); return; }
+  if(_useRedirectAuth){
+    try{ await _auth.signInWithRedirect(googleProvider()); }
+    catch(e){ errEl.textContent='Google 登入發生錯誤：'+(e&&(e.code||e.message)||'未知錯誤'); }
+    return;
+  }
   try{
     await _auth.signInWithPopup(googleProvider());
   } catch(e){
@@ -5822,7 +5832,11 @@ async function doGoogleSignIn(){
 
 async function linkGoogleAccount(){
   if(!_fbUser) return;
-  if(_isStandalonePWA){ await _fbUser.linkWithRedirect(googleProvider()); return; }
+  if(_useRedirectAuth){
+    try{ await _fbUser.linkWithRedirect(googleProvider()); }
+    catch(e){ alert('連結發生錯誤：'+(e&&(e.code||e.message)||'未知錯誤')); }
+    return;
+  }
   try{
     await _fbUser.linkWithPopup(googleProvider());
     showToast('✅ 已成功連結 Google 帳號');
