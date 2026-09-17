@@ -5018,8 +5018,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.81';
+const APP_VERSION='2.82';
 const CHANGELOG=[
+  {version:'2.82',date:'2026-09-17',items:[
+    '修正加到主畫面（PWA 獨立模式）下 Google 登入/連結出現「requested action is invalid」的問題，改用整頁跳轉方式驗證',
+  ]},
   {version:'2.81',date:'2026-09-17',items:[
     '新增 Google 登入，並可在設定 > 帳號將 Google 連結到現有帳號（資料不受影響）',
   ]},
@@ -5594,6 +5597,18 @@ const _db=firebase.firestore();
 _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
+const _isStandalonePWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+
+_auth.getRedirectResult().then(result=>{
+  if(result&&result.user) showToast('✅ Google 登入/連結完成');
+}).catch(e=>{
+  if(e.code==='auth/credential-already-in-use'){
+    alert('這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。');
+  } else if(e.code==='auth/account-exists-with-different-credential'){
+    const errEl=document.getElementById('login-error');
+    if(errEl) errEl.textContent='此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
+  }
+});
 
 function setSyncDot(s){ const d=document.getElementById('sync-dot'); d.className=s; }
 
@@ -5789,6 +5804,7 @@ function googleProvider(){ return new firebase.auth.GoogleAuthProvider(); }
 async function doGoogleSignIn(){
   const errEl=document.getElementById('login-error');
   errEl.style.color='#EF4444'; errEl.textContent='';
+  if(_isStandalonePWA){ await _auth.signInWithRedirect(googleProvider()); return; }
   try{
     await _auth.signInWithPopup(googleProvider());
   } catch(e){
@@ -5796,6 +5812,8 @@ async function doGoogleSignIn(){
       errEl.textContent='此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
     } else if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
       // 使用者自行取消，不顯示錯誤
+    } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
+      await _auth.signInWithRedirect(googleProvider());
     } else {
       errEl.textContent='Google 登入失敗，請再試一次';
     }
@@ -5804,6 +5822,7 @@ async function doGoogleSignIn(){
 
 async function linkGoogleAccount(){
   if(!_fbUser) return;
+  if(_isStandalonePWA){ await _fbUser.linkWithRedirect(googleProvider()); return; }
   try{
     await _fbUser.linkWithPopup(googleProvider());
     showToast('✅ 已成功連結 Google 帳號');
@@ -5813,6 +5832,8 @@ async function linkGoogleAccount(){
       alert('這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。');
     } else if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
       // 使用者自行取消
+    } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
+      await _fbUser.linkWithRedirect(googleProvider());
     } else {
       alert('連結失敗，請再試一次');
     }
