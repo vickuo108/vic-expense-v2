@@ -5018,8 +5018,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.85';
+const APP_VERSION='2.86';
 const CHANGELOG=[
+  {version:'2.86',date:'2026-09-17',items:[
+    'Google 登入/連結一律改用整頁跳轉（不再用彈出視窗），修正桌面瀏覽器選好帳號卻沒登入成功的問題；已連結過的帳號再次點擊連結會顯示提示而非錯誤',
+  ]},
   {version:'2.85',date:'2026-09-17',items:[
     'Google 登入/連結失敗時顯示實際錯誤代碼，方便排查（例如網域未授權 auth/unauthorized-domain）',
   ]},
@@ -5606,19 +5609,15 @@ const _db=firebase.firestore();
 _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
-const _isStandalonePWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-const _useRedirectAuth = _isStandalonePWA || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 _auth.getRedirectResult().then(result=>{
   if(result&&result.user) showToast('✅ Google 登入/連結完成');
 }).catch(e=>{
-  if(e.code==='auth/credential-already-in-use'){
-    alert('這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。');
-  } else if(e.code==='auth/account-exists-with-different-credential'){
-    const errEl=document.getElementById('login-error');
-    if(errEl) errEl.textContent='此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
+  if(e.code==='auth/provider-already-linked'){
+    if(_auth.currentUser) _auth.currentUser.reload().then(renderAccountProviders);
+    showToast('這個帳號已經連結過 Google 了');
   } else if(e.code){
-    alert('Google 登入/連結時發生錯誤：'+e.code);
+    alert(describeGoogleAuthError(e));
   }
 });
 
@@ -5813,53 +5812,36 @@ async function doLogout(){
 
 function googleProvider(){ return new firebase.auth.GoogleAuthProvider(); }
 
+function describeGoogleAuthError(e){
+  const code=e&&e.code;
+  if(code==='auth/account-exists-with-different-credential') return '此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
+  if(code==='auth/unauthorized-domain') return '這個網域還沒被 Firebase 授權（auth/unauthorized-domain），請到 Firebase Console 加入 Authorized domains';
+  if(code==='auth/credential-already-in-use') return '這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。';
+  return 'Google 登入/連結發生錯誤：'+(code||(e&&e.message)||'未知錯誤');
+}
+
+// 一律用整頁跳轉登入，避免彈出視窗在部分瀏覽器（第三方儲存權限限制）下悄悄失敗
 async function doGoogleSignIn(){
   const errEl=document.getElementById('login-error');
   errEl.style.color='#EF4444'; errEl.textContent='';
-  if(_useRedirectAuth){
-    try{ await _auth.signInWithRedirect(googleProvider()); }
-    catch(e){ errEl.textContent='Google 登入發生錯誤：'+(e&&(e.code||e.message)||'未知錯誤'); }
-    return;
-  }
   try{
-    await _auth.signInWithPopup(googleProvider());
+    await _auth.signInWithRedirect(googleProvider());
   } catch(e){
-    if(e.code==='auth/account-exists-with-different-credential'){
-      errEl.textContent='此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
-    } else if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
-      // 使用者自行取消，不顯示錯誤
-    } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
-      await _auth.signInWithRedirect(googleProvider());
-    } else if(e.code==='auth/unauthorized-domain'){
-      errEl.textContent='這個網域還沒被 Firebase 授權（auth/unauthorized-domain），請到 Firebase Console 加入 Authorized domains';
-    } else {
-      errEl.textContent='Google 登入失敗：'+(e&&(e.code||e.message)||'未知錯誤');
-    }
+    errEl.textContent=describeGoogleAuthError(e);
   }
 }
 
 async function linkGoogleAccount(){
   if(!_fbUser) return;
-  if(_useRedirectAuth){
-    try{ await _fbUser.linkWithRedirect(googleProvider()); }
-    catch(e){ alert('連結發生錯誤：'+(e&&(e.code||e.message)||'未知錯誤')); }
-    return;
-  }
   try{
-    await _fbUser.linkWithPopup(googleProvider());
-    showToast('✅ 已成功連結 Google 帳號');
-    renderAccountProviders();
+    await _fbUser.linkWithRedirect(googleProvider());
   } catch(e){
-    if(e.code==='auth/credential-already-in-use'){
-      alert('這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。');
-    } else if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
-      // 使用者自行取消
-    } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
-      await _fbUser.linkWithRedirect(googleProvider());
-    } else if(e.code==='auth/unauthorized-domain'){
-      alert('這個網域還沒被 Firebase 授權（auth/unauthorized-domain）。請到 Firebase Console → Authentication → Settings → Authorized domains，把 '+location.hostname+' 加進去。');
+    if(e.code==='auth/provider-already-linked'){
+      await _fbUser.reload();
+      renderAccountProviders();
+      showToast('這個帳號已經連結過 Google 了');
     } else {
-      alert('連結失敗：'+(e&&(e.code||e.message)||'未知錯誤'));
+      alert(describeGoogleAuthError(e));
     }
   }
 }
