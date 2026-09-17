@@ -1593,7 +1593,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   let _swReg=null;
   let _swRefreshing=false;
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').then(reg=>{
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
       _swReg=reg;
       const applyWaitingUpdate=()=>{
         if(!navigator.serviceWorker.controller||!reg.waiting) return;
@@ -5018,8 +5018,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.83';
+const APP_VERSION='2.84';
 const CHANGELOG=[
+  {version:'2.84',date:'2026-09-17',items:[
+    'Service Worker 更新檢查改為不使用瀏覽器快取，避免推送新版後手機要等 10 分鐘才抓得到',
+  ]},
   {version:'2.83',date:'2026-09-17',items:[
     'Google 登入/連結在手機上一律改用整頁跳轉，並加上錯誤訊息顯示，避免按鈕按下去沒反應',
   ]},
