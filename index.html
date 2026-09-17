@@ -447,11 +447,6 @@ input[type=number]{-moz-appearance:textfield}
     <div class="login-switch"><span id="login-switch-text">還沒有帳號？</span><b onclick="toggleAuthMode()">註冊</b></div>
     <div class="login-forgot" id="login-forgot-wrap"><button type="button" onclick="showPasswordReset()">忘記密碼？</button></div>
     <div class="login-error" id="login-error"></div>
-    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 12px"><div style="flex:1;height:1px;background:#E5E7EB"></div><span style="font-size:12px;color:#9BA3AF">或</span><div style="flex:1;height:1px;background:#E5E7EB"></div></div>
-    <button class="login-btn" id="login-google-btn" onclick="doGoogleSignIn()" style="background:#fff;border:1.5px solid #E5E7EB;color:#1A1A2E;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:0">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
-      使用 Google 登入
-    </button>
   </div>
 </div>
 <!-- 更新橫幅 -->
@@ -984,11 +979,10 @@ input[type=number]{-moz-appearance:textfield}
       <div id="ss-account" class="settings-section-title">👤 帳號</div>
       <div class="card" style="padding:14px;margin-bottom:8px">
         <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:var(--primary)"></span></div>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="display:flex;gap:8px">
           <button onclick="manualSync()" style="flex:1;padding:10px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;color:#1D4ED8;cursor:pointer;font-weight:600">☁️ 立即同步</button>
           <button onclick="doLogout()" style="flex:1;padding:10px;background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:8px;font-size:13px;color:#EF4444;cursor:pointer;font-weight:600">登出</button>
         </div>
-        <div id="acct-google-wrap"></div>
       </div>
 
       <div style="text-align:center;font-size:11px;color:#D1D5DB;margin-top:20px;padding-bottom:8px">Vic 記帳本 v1.0 · 2026</div>
@@ -5018,8 +5012,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.86';
+const APP_VERSION='2.87';
 const CHANGELOG=[
+  {version:'2.87',date:'2026-09-18',items:[
+    '移除 Google 登入功能：App 網域與 Firebase 驗證網域不同，會被瀏覽器的第三方儲存保護機制擋下，無法穩定運作，改回單純 Email + 密碼登入',
+  ]},
   {version:'2.86',date:'2026-09-17',items:[
     'Google 登入/連結一律改用整頁跳轉（不再用彈出視窗），修正桌面瀏覽器選好帳號卻沒登入成功的問題；已連結過的帳號再次點擊連結會顯示提示而非錯誤',
   ]},
@@ -5610,17 +5607,6 @@ _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
 
-_auth.getRedirectResult().then(result=>{
-  if(result&&result.user) showToast('✅ Google 登入/連結完成');
-}).catch(e=>{
-  if(e.code==='auth/provider-already-linked'){
-    if(_auth.currentUser) _auth.currentUser.reload().then(renderAccountProviders);
-    showToast('這個帳號已經連結過 Google 了');
-  } else if(e.code){
-    alert(describeGoogleAuthError(e));
-  }
-});
-
 function setSyncDot(s){ const d=document.getElementById('sync-dot'); d.className=s; }
 
 function scheduleSyncToCloud(){
@@ -5810,61 +5796,6 @@ async function doLogout(){
   await _auth.signOut();
 }
 
-function googleProvider(){ return new firebase.auth.GoogleAuthProvider(); }
-
-function describeGoogleAuthError(e){
-  const code=e&&e.code;
-  if(code==='auth/account-exists-with-different-credential') return '此 Email 已用密碼註冊過，請先用密碼登入，再到「設定 > 帳號」連結 Google';
-  if(code==='auth/unauthorized-domain') return '這個網域還沒被 Firebase 授權（auth/unauthorized-domain），請到 Firebase Console 加入 Authorized domains';
-  if(code==='auth/credential-already-in-use') return '這個 Google 帳號已經連結過另一組資料，無法直接合併。若要改用該帳號，請先登出，再用 Google 直接登入。';
-  return 'Google 登入/連結發生錯誤：'+(code||(e&&e.message)||'未知錯誤');
-}
-
-// 一律用整頁跳轉登入，避免彈出視窗在部分瀏覽器（第三方儲存權限限制）下悄悄失敗
-async function doGoogleSignIn(){
-  const errEl=document.getElementById('login-error');
-  errEl.style.color='#EF4444'; errEl.textContent='';
-  try{
-    await _auth.signInWithRedirect(googleProvider());
-  } catch(e){
-    errEl.textContent=describeGoogleAuthError(e);
-  }
-}
-
-async function linkGoogleAccount(){
-  if(!_fbUser) return;
-  try{
-    await _fbUser.linkWithRedirect(googleProvider());
-  } catch(e){
-    if(e.code==='auth/provider-already-linked'){
-      await _fbUser.reload();
-      renderAccountProviders();
-      showToast('這個帳號已經連結過 Google 了');
-    } else {
-      alert(describeGoogleAuthError(e));
-    }
-  }
-}
-
-async function unlinkGoogleAccount(){
-  if(!_fbUser) return;
-  if(!confirm('確定要取消連結 Google？取消後只能用 Email 密碼登入。')) return;
-  try{
-    await _fbUser.unlink(firebase.auth.GoogleAuthProvider.PROVIDER_ID);
-    showToast('已取消連結 Google');
-    renderAccountProviders();
-  } catch(e){ alert('取消連結失敗，請再試一次'); }
-}
-
-function renderAccountProviders(){
-  const wrap=document.getElementById('acct-google-wrap');
-  if(!wrap||!_fbUser) return;
-  const hasGoogle=_fbUser.providerData.some(p=>p.providerId==='google.com');
-  wrap.innerHTML = hasGoogle
-    ? `<div style="font-size:12px;color:#10B981;margin-bottom:8px">✅ 已連結 Google 登入</div><button onclick="unlinkGoogleAccount()" style="width:100%;padding:8px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;color:#6B7280;cursor:pointer;font-weight:600">取消連結 Google</button>`
-    : `<button onclick="linkGoogleAccount()" style="width:100%;padding:10px;background:#fff;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;color:#1A1A2E;cursor:pointer;font-weight:600">🔗 連結 Google 帳號（資料不變，之後可直接用 Google 登入）</button>`;
-}
-
 // Auth state listener
 const KEY_LAST_ACTIVE='vic2_last_active';
 const SEVEN_DAYS=7*24*60*60*1000;
@@ -5878,7 +5809,6 @@ _auth.onAuthStateChanged(async user=>{
     localStorage.setItem(KEY_LAST_ACTIVE, Date.now().toString());
     localStorage.setItem('vic2_last_email', user.email);
     document.getElementById('acct-email').textContent=user.email;
-    renderAccountProviders();
     const overlay=document.getElementById('login-overlay');
     overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await syncFromCloud();
