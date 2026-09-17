@@ -1708,7 +1708,7 @@ function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
   }
   if(typeVal==='內部轉帳'){
     const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
-    ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
+    ['轉帳','提款','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
     el.appendChild(gx);
     const ge=document.createElement('optgroup'); ge.label='電子錢包操作';
     const oe=document.createElement('option'); oe.value='加值'; oe.textContent='加值'; ge.appendChild(oe);
@@ -1735,7 +1735,7 @@ function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
   const grp=getMethodGroup(methodVal);
   if(grp==='銀行帳戶'){
     const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
-    ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
+    ['轉帳','提款','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
     el.appendChild(gx);
   }
 }
@@ -1842,7 +1842,7 @@ function fillEditMainSelect(el){
   addGroup('固定 / 信用卡 / 貸款',['固定支出','繳信用卡款','貸款']);
   addGroup('財務規劃',plans.map(p=>p.name));
   addGroup('收入',income);
-  addGroup('銀行帳戶操作',['提款','轉帳','現金存入','手續費','奉獻']);
+  addGroup('銀行帳戶操作',['轉帳','提款','現金存入','手續費','奉獻']);
   addGroup('電子錢包操作',['加值']);
 }
 
@@ -5012,8 +5012,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.79';
+const APP_VERSION='2.80';
 const CHANGELOG=[
+  {version:'2.80',date:'2026-09-17',items:[
+    '銀行帳戶操作的主類別順序改為轉帳在前、提款在後',
+  ]},
   {version:'2.79',date:'2026-09-13',items:[
     '女友分攤改為整數計算，遇到 1 元差額時由 Vic 承擔，不再出現 0.5 元分攤',
   ]},
