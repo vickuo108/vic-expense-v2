@@ -5018,8 +5018,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.84';
+const APP_VERSION='2.85';
 const CHANGELOG=[
+  {version:'2.85',date:'2026-09-17',items:[
+    'Google 登入/連結失敗時顯示實際錯誤代碼，方便排查（例如網域未授權 auth/unauthorized-domain）',
+  ]},
   {version:'2.84',date:'2026-09-17',items:[
     'Service Worker 更新檢查改為不使用瀏覽器快取，避免推送新版後手機要等 10 分鐘才抓得到',
   ]},
@@ -5827,8 +5830,10 @@ async function doGoogleSignIn(){
       // 使用者自行取消，不顯示錯誤
     } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
       await _auth.signInWithRedirect(googleProvider());
+    } else if(e.code==='auth/unauthorized-domain'){
+      errEl.textContent='這個網域還沒被 Firebase 授權（auth/unauthorized-domain），請到 Firebase Console 加入 Authorized domains';
     } else {
-      errEl.textContent='Google 登入失敗，請再試一次';
+      errEl.textContent='Google 登入失敗：'+(e&&(e.code||e.message)||'未知錯誤');
     }
   }
 }
@@ -5851,8 +5856,10 @@ async function linkGoogleAccount(){
       // 使用者自行取消
     } else if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){
       await _fbUser.linkWithRedirect(googleProvider());
+    } else if(e.code==='auth/unauthorized-domain'){
+      alert('這個網域還沒被 Firebase 授權（auth/unauthorized-domain）。請到 Firebase Console → Authentication → Settings → Authorized domains，把 '+location.hostname+' 加進去。');
     } else {
-      alert('連結失敗，請再試一次');
+      alert('連結失敗：'+(e&&(e.code||e.message)||'未知錯誤'));
     }
   }
 }
