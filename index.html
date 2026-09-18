@@ -281,6 +281,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .settings-btn .s-title{font-size:15px;font-weight:600}
 .settings-btn .s-desc{font-size:12px;color:#9BA3AF;margin-top:2px}
 .settings-btn .s-arrow{color:#D1D5DB;font-size:18px}
+.settings-version{cursor:default}
 
 /* List editor */
 .list-editor{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:10px;user-select:none;-webkit-user-select:none}
@@ -959,11 +960,10 @@ input[type=number]{-moz-appearance:textfield}
         <div class="s-text"><div class="s-title">清除所有記帳資料</div><div class="s-desc">不可復原，請先備份</div></div>
         <span class="s-arrow" style="color:#EF4444">›</span>
       </button>
-      <button class="settings-btn" onclick="checkForUpdate()">
+      <div class="settings-btn settings-version">
         <div class="s-icon" style="background:#F0F9FF">🔄</div>
-        <div class="s-text"><div class="s-title">檢查更新</div><div class="s-desc">手動檢查 App 更新，有新版時會自動重新載入</div></div>
-        <span class="s-arrow">›</span>
-      </button>
+        <div class="s-text"><div class="s-title">目前版本</div><div class="s-desc" id="app-version-label">載入中…</div></div>
+      </div>
 
       <button class="settings-btn" onclick="openGlossary()">
         <div class="s-icon" style="background:var(--primary-tint)">📚</div>
@@ -1609,6 +1609,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   }
   checkChangelog();
+  updateAppVersionDisplay();
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'){
       refreshTodayUI();
@@ -4912,21 +4913,6 @@ function confirmClear(){
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-function checkForUpdate(){
-  if(!('serviceWorker' in navigator)){ showToast('此瀏覽器不支援 SW'); return; }
-  navigator.serviceWorker.getRegistration().then(reg=>{
-    if(!reg){ showToast('尚未安裝 Service Worker'); return; }
-    showToast('正在檢查更新…');
-    reg.update().then(()=>{
-      if(reg.waiting){
-        showToast('偵測到新版本，正在自動更新…');
-        reg.waiting.postMessage('SKIP_WAITING');
-      } else {
-        showToast('已是最新版本 ✓');
-      }
-    }).catch(()=>showToast('檢查失敗，請確認網路連線'));
-  });
-}
 function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isValidAppDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s)&&s>='1000-01-01'&&s<='9999-12-31'; }
 function requireValidDate(id,msg='請輸入完整 4 位數年份日期'){
@@ -5012,8 +4998,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.87';
+const APP_VERSION='2.88';
 const CHANGELOG=[
+  {version:'2.88',date:'2026-09-18',items:[
+    '設定頁移除手動檢查更新按鈕，改為顯示目前 App 版本',
+  ]},
   {version:'2.87',date:'2026-09-18',items:[
     '移除 Google 登入功能：App 網域與 Firebase 驗證網域不同，會被瀏覽器的第三方儲存保護機制擋下，無法穩定運作，改回單純 Email + 密碼登入',
   ]},
@@ -5467,6 +5456,11 @@ const CHANGELOG=[
     '設定頁「資料備份」改名為「🛠️ 維護與工具」',
   ]},
 ];
+
+function updateAppVersionDisplay(){
+  const el=document.getElementById('app-version-label');
+  if(el) el.textContent=`v${APP_VERSION}`;
+}
 
 function checkChangelog(){
   const seen=localStorage.getItem('vic2_seen_version');
