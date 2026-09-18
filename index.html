@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#3B5BDB">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Vic記帳">
 <link rel="manifest" href="manifest.json">
 <title>Vic 記帳本</title>
@@ -4998,8 +4998,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.91';
+const APP_VERSION='2.92';
 const CHANGELOG=[
+  {version:'2.92',date:'2026-09-18',items:[
+    'iOS 主畫面狀態列改為黑色不透明模式，避免系統透明材質造成頂部漸層',
+  ]},
   {version:'2.91',date:'2026-09-18',items:[
     'iOS 主畫面模式改為整個 App 往下避開狀態列，避免頂部狀態列區域出現系統漸層',
   ]},
