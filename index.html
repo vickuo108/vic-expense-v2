@@ -157,8 +157,9 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .stat-box.clickable:active{opacity:.75}
 .mobal-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:none;align-items:flex-end}
 .mobal-sheet-overlay.open{display:flex}
-.mobal-sheet{background:#fff;border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));width:100%;box-sizing:border-box;max-height:80vh;overflow-y:auto}
-.mobal-sheet-title{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:16px;text-align:center}
+.mobal-sheet{background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));width:100%;box-sizing:border-box;max-height:80vh;overflow-y:auto}
+.mobal-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.mobal-sheet-title{font-size:16px;font-weight:700;color:#1A1A2E;line-height:1.4}
 .mobal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6;font-size:14px}
 .mobal-row:last-child{border-bottom:none}
 .mobal-row-label{color:#374151}
@@ -376,6 +377,7 @@ input[type=number]{-moz-appearance:textfield}
 .glossary-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:600;display:none;flex-direction:column}
 .glossary-overlay.open{display:flex}
 .glossary-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;flex-shrink:0}
+.glossary-close-btn{background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 .glossary-body{flex:1;overflow-y:auto;padding:12px 12px 32px;-webkit-overflow-scrolling:touch}
 .glossary-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .glossary-term{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
@@ -405,7 +407,8 @@ input[type=number]{-moz-appearance:textfield}
 .input-dialog{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:2600;display:none;align-items:center;justify-content:center;padding:20px}
 .input-dialog.open{display:flex}
 .input-dialog-card{background:#fff;border-radius:16px;width:100%;max-width:360px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.input-dialog-title{font-size:18px;font-weight:700;color:#1A1A2E;margin-bottom:14px;line-height:1.4}
+.input-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
+.input-dialog-title{font-size:18px;font-weight:700;color:#1A1A2E;line-height:1.4;padding-top:2px}
 .input-dialog-field{width:100%;box-sizing:border-box;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px 14px;font-size:16px;outline:none;margin-bottom:16px;-webkit-appearance:none}
 .input-dialog-field:focus{border-color:var(--primary)}
 .input-dialog-actions{display:flex;justify-content:flex-end;gap:10px}
@@ -462,7 +465,10 @@ input[type=number]{-moz-appearance:textfield}
 <!-- 自訂輸入彈窗 -->
 <div class="input-dialog" id="input-dialog">
   <div class="input-dialog-card">
-    <div class="input-dialog-title" id="input-dialog-title"></div>
+    <div class="input-dialog-header">
+      <div class="input-dialog-title" id="input-dialog-title"></div>
+      <button class="modal-close" type="button" id="input-dialog-close">✕</button>
+    </div>
     <input class="input-dialog-field" id="input-dialog-field">
     <div class="input-dialog-actions">
       <button class="input-dialog-cancel" type="button" id="input-dialog-cancel">取消</button>
@@ -1076,6 +1082,7 @@ input[type=number]{-moz-appearance:textfield}
       <div style="font-size:12px;opacity:.8">點擊說明可展開／收合</div>
     </div>
     <button onclick="showAddGlossary()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
+    <button class="glossary-close-btn" type="button" onclick="closeGlossary()">✕</button>
   </div>
   <div class="glossary-body">
     <input type="text" id="glossary-search" placeholder="🔍 搜尋詞彙或說明…" oninput="renderGlossaryList()" style="width:100%;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff;margin-bottom:10px;box-sizing:border-box">
@@ -4979,9 +4986,10 @@ function showInputDialog(title,value=''){
     const field=document.getElementById('input-dialog-field');
     const cancelBtn=document.getElementById('input-dialog-cancel');
     const confirmBtn=document.getElementById('input-dialog-confirm');
+    const closeBtn=document.getElementById('input-dialog-close');
     const close=val=>{
       overlay.classList.remove('open');
-      cancelBtn.onclick=null; confirmBtn.onclick=null; field.onkeydown=null;
+      cancelBtn.onclick=null; confirmBtn.onclick=null; closeBtn.onclick=null; field.onkeydown=null;
       resolve(val);
     };
     titleEl.textContent=title;
@@ -4989,6 +4997,7 @@ function showInputDialog(title,value=''){
     overlay.classList.add('open');
     setTimeout(()=>{ field.focus(); field.select(); },30);
     cancelBtn.onclick=()=>close(null);
+    closeBtn.onclick=()=>close(null);
     confirmBtn.onclick=()=>close(field.value);
     field.onkeydown=e=>{
       if(e.key==='Enter') close(field.value);
@@ -4998,8 +5007,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.92';
+const APP_VERSION='2.93';
 const CHANGELOG=[
+  {version:'2.93',date:'2026-09-20',items:[
+    '補齊自訂輸入彈窗、明細底部視窗與財務語言頁右上角關閉按鈕',
+  ]},
   {version:'2.92',date:'2026-09-18',items:[
     'iOS 主畫面狀態列改為黑色不透明模式，避免系統透明材質造成頂部漸層',
   ]},
@@ -5835,7 +5847,10 @@ _auth.onAuthStateChanged(async user=>{
 <!-- 月可用餘額明細 sheet -->
 <div class="mobal-sheet-overlay" id="mobal-sheet-overlay" onclick="this.classList.remove('open')">
   <div class="mobal-sheet" onclick="event.stopPropagation()">
-    <div class="mobal-sheet-title" id="mobal-sheet-title">月可用餘額明細</div>
+    <div class="mobal-sheet-header">
+      <div class="mobal-sheet-title" id="mobal-sheet-title">月可用餘額明細</div>
+      <button class="modal-close" type="button" onclick="document.getElementById('mobal-sheet-overlay').classList.remove('open')">✕</button>
+    </div>
     <div id="mobal-sheet-body"></div>
   </div>
 </div>
