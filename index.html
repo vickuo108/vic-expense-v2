@@ -393,15 +393,8 @@ input[type=number]{-moz-appearance:textfield}
 .login-logo{font-size:40px;text-align:center;margin-bottom:6px}
 .login-title{font-size:20px;font-weight:700;text-align:center;color:#1A1A2E;margin-bottom:4px}
 .login-sub{font-size:13px;color:#9BA3AF;text-align:center;margin-bottom:24px}
-.login-input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;box-sizing:border-box;margin-bottom:12px;outline:none;-webkit-appearance:none}
-.login-input:focus{border-color:var(--primary)}
 .login-btn{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px}
 .login-btn:disabled{opacity:.6;cursor:default}
-.login-switch{text-align:center;font-size:13px;color:#9BA3AF}
-.login-switch b{color:var(--primary);cursor:pointer;font-weight:600}
-.login-forgot{text-align:center;margin-top:10px}
-.login-forgot button{border:none;background:transparent;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px}
-.login-forgot button:active{color:var(--primary)}
 .login-error{color:#EF4444;font-size:13px;text-align:center;margin-top:8px;min-height:18px}
 /* ── 自訂輸入彈窗 ── */
 .input-dialog{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:2600;display:none;align-items:center;justify-content:center;padding:20px}
@@ -444,14 +437,8 @@ input[type=number]{-moz-appearance:textfield}
   <div class="login-card">
     <div class="login-logo">💰</div>
     <div class="login-title">Vic 記帳本</div>
-    <div class="login-sub" id="login-mode-sub">登入以同步資料</div>
+    <div class="login-sub">登入以同步資料</div>
     <button class="login-btn" id="google-login-btn" type="button" onclick="doGoogleAuth()">使用 Google 登入</button>
-    <div class="login-sub" style="margin:14px 0">或使用原有 Email 帳號登入</div>
-    <input class="login-input" id="login-email" type="email" placeholder="Email" autocomplete="email" inputmode="email">
-    <input class="login-input" id="login-password" type="password" placeholder="密碼" autocomplete="current-password">
-    <button class="login-btn" id="login-submit-btn" onclick="doAuthSubmit()">登入</button>
-    <div class="login-switch"><span id="login-switch-text">還沒有帳號？</span><b onclick="toggleAuthMode()">註冊</b></div>
-    <div class="login-forgot" id="login-forgot-wrap"><button type="button" onclick="showPasswordReset()">忘記密碼？</button></div>
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
@@ -987,7 +974,6 @@ input[type=number]{-moz-appearance:textfield}
       <div id="ss-account" class="settings-section-title">👤 帳號</div>
       <div class="card" style="padding:14px;margin-bottom:8px">
         <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:var(--primary)"></span></div>
-        <button class="login-btn" id="google-link-btn" type="button" onclick="doGoogleAuth(true)" style="margin-bottom:12px">連結 Google 帳號</button>
         <div style="display:flex;gap:8px">
           <button onclick="manualSync()" style="flex:1;padding:10px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;color:#1D4ED8;cursor:pointer;font-weight:600">☁️ 立即同步</button>
           <button onclick="doLogout()" style="flex:1;padding:10px;background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:8px;font-size:13px;color:#EF4444;cursor:pointer;font-weight:600">登出</button>
@@ -5010,8 +4996,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.94';
+const APP_VERSION='2.95';
 const CHANGELOG=[
+  {version:'2.95',date:'2026-10-10',items:[
+    '登入頁只保留 Google 登入，移除 Email 與密碼登入、註冊和重設密碼入口',
+  ]},
   {version:'2.94',date:'2026-10-10',items:[
     '新增 Google 登入與帳號連結，移除長時間未開啟後強制登出的限制',
   ]},
@@ -5629,7 +5618,7 @@ const _auth=firebase.auth();
 const _db=firebase.firestore();
 _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
-let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
+let _fbUser=null, _isSyncing=false, _syncTimer=null;
 
 function setSyncDot(s){ const d=document.getElementById('sync-dot'); d.className=s; }
 
@@ -5748,23 +5737,14 @@ function googleAuthError(error){
     'auth/cancelled-popup-request':'已有登入視窗開啟，請先完成登入。',
     'auth/unauthorized-domain':'目前網址尚未獲准使用 Google 登入，請在 Firebase 加入授權網域。',
     'auth/operation-not-allowed':'尚未啟用 Google 登入，請在 Firebase 啟用 Google 登入服務。',
-    'auth/account-exists-with-different-credential':'請先用原本的 Email 與密碼登入，再到設定連結 Google 帳號。',
-    'auth/credential-already-in-use':'這個 Google 帳號已連結其他帳號，請選擇另一個 Google 帳號。',
-    'auth/provider-already-linked':'此帳號已連結 Google，可直接使用 Google 登入。',
+    'auth/account-exists-with-different-credential':'這個 Email 已有其他登入方式，請確認選擇的 Google 帳號。',
     'auth/network-request-failed':'網路連線失敗，請連線後再試。',
-    'auth/requires-recent-login':'請先重新登入原帳號，再連結 Google。',
   };
   return messages[error.code]||('Google 登入失敗（'+(error.code||'未知錯誤')+'），請再試一次。');
 }
 
-function renderGoogleAccount(){
-  const linked=!!_auth.currentUser?.providerData.some(provider=>provider.providerId==='google.com');
-  const button=document.getElementById('google-link-btn');
-  if(button){ button.disabled=linked; button.textContent=linked?'已連結 Google 帳號':'連結 Google 帳號'; }
-}
-
-async function doGoogleAuth(link=false){
-  const button=document.getElementById(link?'google-link-btn':'google-login-btn');
+async function doGoogleAuth(){
+  const button=document.getElementById('google-login-btn');
   const errorElement=document.getElementById('login-error');
   button.disabled=true;
   errorElement.textContent='';
@@ -5772,94 +5752,11 @@ async function doGoogleAuth(link=false){
     const provider=new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({prompt:'select_account'});
     // Open directly from the tap so Safari retains the popup user gesture.
-    if(link){
-      if(!_auth.currentUser) throw {code:'auth/requires-recent-login'};
-      await _auth.currentUser.linkWithPopup(provider);
-      showToast('已連結 Google 帳號，原有記帳資料保留');
-    } else {
-      await _auth.signInWithPopup(provider);
-    }
+    await _auth.signInWithPopup(provider);
   } catch(error){
-    const message=googleAuthError(error);
-    if(link) showToast(message);
-    else { errorElement.style.color='#EF4444'; errorElement.textContent=message; }
+    errorElement.textContent=googleAuthError(error);
   } finally {
     button.disabled=false;
-    renderGoogleAccount();
-  }
-}
-
-// Auth UI
-function renderAuthMode(){
-  const isLogin=_authMode==='login';
-  const isRegister=_authMode==='register';
-  document.getElementById('login-mode-sub').textContent=isLogin?'登入以同步資料':isRegister?'建立新帳號':'輸入 Email 取得重設連結';
-  document.getElementById('login-submit-btn').textContent=isLogin?'登入':isRegister?'註冊':'寄出重設信';
-  document.getElementById('login-switch-text').textContent=isRegister?'已有帳號？':_authMode==='reset'?'想起密碼？':'還沒有帳號？';
-  document.querySelector('.login-switch b').textContent=isRegister||_authMode==='reset'?'登入':'註冊';
-  document.getElementById('login-password').style.display=_authMode==='reset'?'none':'block';
-  document.getElementById('login-forgot-wrap').style.display=isLogin?'block':'none';
-  document.getElementById('login-error').style.color='#EF4444';
-  document.getElementById('login-error').textContent='';
-}
-
-function toggleAuthMode(){
-  _authMode=_authMode==='login'?'register':'login';
-  renderAuthMode();
-}
-
-function showPasswordReset(){
-  _authMode='reset';
-  renderAuthMode();
-}
-
-async function doAuthSubmit(){
-  const email=document.getElementById('login-email').value.trim();
-  const pw=document.getElementById('login-password').value;
-  const errEl=document.getElementById('login-error');
-  const btn=document.getElementById('login-submit-btn');
-  if(_authMode==='reset'){ await sendPasswordReset(); return; }
-  errEl.style.color='#EF4444';
-  if(!email||!pw){ errEl.textContent='請填寫 Email 和密碼'; return; }
-  btn.disabled=true; errEl.textContent='';
-  try{
-    if(_authMode==='login') await _auth.signInWithEmailAndPassword(email,pw);
-    else await _auth.createUserWithEmailAndPassword(email,pw);
-  } catch(e){
-    const msg={
-      'auth/user-not-found':'找不到此帳號',
-      'auth/wrong-password':'密碼錯誤',
-      'auth/invalid-email':'Email 格式不正確',
-      'auth/email-already-in-use':'此 Email 已被註冊',
-      'auth/weak-password':'密碼至少需要 6 個字元',
-      'auth/invalid-credential':'帳號或密碼錯誤',
-    };
-    errEl.textContent=msg[e.code]||'登入失敗，請再試一次';
-    btn.disabled=false;
-  }
-}
-
-async function sendPasswordReset(){
-  const emailEl=document.getElementById('login-email');
-  const errEl=document.getElementById('login-error');
-  const btn=document.getElementById('login-submit-btn');
-  const email=emailEl.value.trim();
-  errEl.style.color='#EF4444';
-  if(!email){ errEl.textContent='請先輸入 Email'; return; }
-  btn.disabled=true; errEl.textContent='';
-  try{
-    await _auth.sendPasswordResetEmail(email);
-    errEl.style.color='#10B981';
-    errEl.textContent='已寄出密碼重設信，請到信箱查看；如果沒收到，請檢查垃圾郵件。';
-  } catch(e){
-    const msg={
-      'auth/user-not-found':'找不到此帳號',
-      'auth/invalid-email':'Email 格式不正確',
-    };
-    errEl.style.color='#EF4444';
-    errEl.textContent=msg[e.code]||'無法寄出重設信，請再試一次';
-  } finally {
-    btn.disabled=false;
   }
 }
 
@@ -5869,26 +5766,20 @@ async function doLogout(){
 }
 
 // Auth state listener
-const KEY_LAST_ACTIVE='vic2_last_active';
 _auth.onAuthStateChanged(async user=>{
   _fbUser=user;
   if(user){
-    renderGoogleAccount();
-    localStorage.setItem('vic2_last_email', user.email);
     document.getElementById('acct-email').textContent=user.email;
     const overlay=document.getElementById('login-overlay');
     overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await syncFromCloud();
     await migrateImportedMainCategories2026();
   } else {
-    localStorage.removeItem(KEY_LAST_ACTIVE);
     const overlay=document.getElementById('login-overlay');
     overlay.style.display='flex'; overlay.style.opacity='1';
-    document.getElementById('login-submit-btn').disabled=false;
+    document.getElementById('google-login-btn').disabled=false;
+    document.getElementById('login-error').textContent='';
     setSyncDot('');
-    // 自動填入上次登入的 email
-    const lastEmail=localStorage.getItem('vic2_last_email');
-    if(lastEmail) document.getElementById('login-email').value=lastEmail;
   }
 });
 </script>
