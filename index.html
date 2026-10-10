@@ -4996,8 +4996,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.95';
+const APP_VERSION='2.96';
 const CHANGELOG=[
+  {version:'2.96',date:'2026-10-10',items:[
+    '同一裝置切換帳號時，本機記帳資料依帳號分開保存與還原，避免不同帳號資料混用',
+  ]},
   {version:'2.95',date:'2026-10-10',items:[
     '登入頁只保留 Google 登入，移除 Email 與密碼登入、註冊和重設密碼入口',
   ]},
@@ -5619,6 +5622,56 @@ const _db=firebase.firestore();
 _auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null;
+const ACCOUNT_OWNER_KEY='vic2_account_owner_v1';
+const ACCOUNT_SCOPED_KEY='vic2_account_scoped_v1';
+const ACCOUNT_DATA_PREFIX='vic2_account_data_v1:';
+const ACCOUNT_DATA_KEYS=[
+  KEY_RECORDS,KEY_MG,KEY_CATS,KEY_INCOME,KEY_FIXED,KEY_FIXED_GROUPS,
+  KEY_LOANS,KEY_LOAN_PRIN,KEY_ACCT_BAL,KEY_ACCT_AVAIL,KEY_CC_DUE,
+  KEY_CC_LIMITS,KEY_FIN_PLAN,KEY_BUDGETS,KEY_MONTHLY_BUDGETS,
+  KEY_APP_NAME,KEY_GLOSSARY,KEY_REPORT_STATE,
+  'vic2_migrate_2026_imported_main_cats_v1',
+];
+
+function readLocalAccountData(){
+  const data={};
+  ACCOUNT_DATA_KEYS.forEach(key=>{
+    const value=localStorage.getItem(key);
+    if(value!==null) data[key]=value;
+  });
+  return data;
+}
+
+function saveLocalAccountData(uid){
+  localStorage.setItem(ACCOUNT_DATA_PREFIX+uid,JSON.stringify(readLocalAccountData()));
+}
+
+function switchLocalAccount(uid){
+  const owner=localStorage.getItem(ACCOUNT_OWNER_KEY);
+  if(!uid&&!owner) return false;
+  if(owner===uid) return false;
+  if(owner) saveLocalAccountData(owner);
+  else if(!localStorage.getItem(ACCOUNT_SCOPED_KEY)){
+    const legacy=readLocalAccountData();
+    if(Object.keys(legacy).length){
+      const key=uid&&localStorage.getItem('vic2_last_email')===_fbUser?.email
+        ? ACCOUNT_DATA_PREFIX+uid : 'vic2_unassigned_legacy_data_v1';
+      if(!localStorage.getItem(key)) localStorage.setItem(key,JSON.stringify(legacy));
+    }
+  }
+  ACCOUNT_DATA_KEYS.forEach(key=>localStorage.removeItem(key));
+  if(uid){
+    const data=JSON.parse(localStorage.getItem(ACCOUNT_DATA_PREFIX+uid)||'{}');
+    ACCOUNT_DATA_KEYS.forEach(key=>{
+      if(typeof data[key]==='string') localStorage.setItem(key,data[key]);
+    });
+    localStorage.setItem(ACCOUNT_OWNER_KEY,uid);
+  } else {
+    localStorage.removeItem(ACCOUNT_OWNER_KEY);
+  }
+  localStorage.setItem(ACCOUNT_SCOPED_KEY,'1');
+  return true;
+}
 
 function setSyncDot(s){ const d=document.getElementById('sync-dot'); d.className=s; }
 
@@ -5639,18 +5692,21 @@ function syncAppTitleNow(){
 async function syncToCloud(){
   if(!_fbUser) return;
   try{
+    const uid=_fbUser.uid;
     const _cats=loadCats();
     const p={records:loadRecords(),methods_grouped:loadMG(),categories:_cats,cats_order:Object.keys(_cats),income_cats:loadIncome(),fixed:loadFixed(),fixed_groups:loadFixedGroups(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets(),app_name:localStorage.getItem(KEY_APP_NAME)||''};
-    await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').set(p);
-    setSyncDot('ok');
+    await _db.collection('users').doc(uid).collection('data').doc('main').set(p);
+    if(_fbUser?.uid===uid) setSyncDot('ok');
   } catch(e){ setSyncDot('error'); }
 }
 
 async function syncFromCloud(){
   if(!_fbUser) return;
+  const uid=_fbUser.uid;
   setSyncDot('syncing');
   try{
-    const doc=await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').get();
+    const doc=await _db.collection('users').doc(uid).collection('data').doc('main').get();
+    if(_fbUser?.uid!==uid) return false;
     if(doc.exists){
       _isSyncing=true;
       const d=doc.data();
@@ -5682,7 +5738,8 @@ async function syncFromCloud(){
       if(document.getElementById('panel-report')?.classList.contains('active')) renderFinReport();
     }
     setSyncDot('ok');
-  } catch(e){ _isSyncing=false; setSyncDot('error'); }
+    return true;
+  } catch(e){ _isSyncing=false; setSyncDot('error'); return false; }
 }
 
 const KEY_MIGRATE_2026_IMPORTED_MAIN_CATS='vic2_migrate_2026_imported_main_cats_v1';
@@ -5767,14 +5824,32 @@ async function doLogout(){
 
 // Auth state listener
 _auth.onAuthStateChanged(async user=>{
+  clearTimeout(_syncTimer);
   _fbUser=user;
   if(user){
-    document.getElementById('acct-email').textContent=user.email;
     const overlay=document.getElementById('login-overlay');
-    overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
+    overlay.style.display='flex'; overlay.style.opacity='1';
+    try{
+      if(switchLocalAccount(user.uid)){
+        localStorage.setItem('vic2_last_email',user.email);
+        window.location.reload();
+        return;
+      }
+    } catch(error){
+      console.error(error);
+      document.getElementById('login-error').textContent='無法切換本機帳號資料，請確認裝置儲存空間。';
+      setSyncDot('error');
+      return;
+    }
+    document.getElementById('acct-email').textContent=user.email;
     await syncFromCloud();
+    if(_fbUser?.uid!==user.uid) return;
+    overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await migrateImportedMainCategories2026();
   } else {
+    try{ switchLocalAccount(null); }
+    catch(error){ console.error(error); }
+    loadAppTitle();
     const overlay=document.getElementById('login-overlay');
     overlay.style.display='flex'; overlay.style.opacity='1';
     document.getElementById('google-login-btn').disabled=false;
