@@ -38,6 +38,9 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .form-label{font-size:12px;color:#6B7280;margin-bottom:5px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 .form-control{width:100%;padding:11px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;background:#fff;color:#1A1A2E;appearance:none;-webkit-appearance:none}
 .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s12)}
+.date-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.date-today-btn{min-width:58px;padding:0 12px;border:1.5px solid var(--primary-border);border-radius:10px;background:var(--primary-tint);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer}
+.date-today-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .amount-wrap{position:relative}
 .amount-currency{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9BA3AF;font-size:15px;pointer-events:none}
@@ -389,6 +392,12 @@ input[type=number]{-moz-appearance:textfield}
 .glossary-toggle{font-size:10px;color:#9BA3AF;cursor:pointer;margin-top:4px;display:block;text-align:right}
 /* ── 登入畫面 ── */
 #login-overlay{position:fixed;inset:0;background:#1A1A2E;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
+#login-overlay.loading .login-card{display:none}
+.login-loading{display:none;flex-direction:column;align-items:center;gap:10px;color:#fff;font-size:15px;font-weight:600}
+#login-overlay.loading .login-loading{display:flex}
+.login-loading-icon{font-size:40px}
+.login-loading-spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:login-spin .8s linear infinite}
+@keyframes login-spin{to{transform:rotate(360deg)}}
 .login-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-logo{font-size:40px;text-align:center;margin-bottom:6px}
 .login-title{font-size:20px;font-weight:700;text-align:center;color:#1A1A2E;margin-bottom:4px}
@@ -439,7 +448,12 @@ input[type=number]{-moz-appearance:textfield}
 </head>
 <body>
 <!-- 登入畫面 -->
-<div id="login-overlay">
+<div id="login-overlay" class="loading">
+  <div class="login-loading" role="status" aria-live="polite">
+    <div class="login-loading-icon">💰</div>
+    <div>正在載入記帳本</div>
+    <div class="login-loading-spinner" aria-hidden="true"></div>
+  </div>
   <div class="login-card">
     <div class="login-logo">💰</div>
     <div class="login-title">Vic 記帳本</div>
@@ -588,7 +602,10 @@ input[type=number]{-moz-appearance:textfield}
       <div class="card">
         <div class="form-group">
           <label class="form-label">日期</label>
-          <input type="date" class="form-control" id="f-date" min="1000-01-01" max="9999-12-31">
+          <div class="date-input-row">
+            <input type="date" class="form-control" id="f-date" min="1000-01-01" max="9999-12-31">
+            <button class="date-today-btn" type="button" onclick="setDateToday('f-date')">今天</button>
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -1102,7 +1119,10 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="form-group">
       <label class="form-label">日期</label>
-      <input type="date" class="form-control" id="e-date" min="1000-01-01" max="9999-12-31">
+      <div class="date-input-row">
+        <input type="date" class="form-control" id="e-date" min="1000-01-01" max="9999-12-31">
+        <button class="date-today-btn" type="button" onclick="setDateToday('e-date')">今天</button>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -4923,6 +4943,7 @@ function confirmClear(){
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function setDateToday(fieldId){ document.getElementById(fieldId).value=localDateStr(); }
 function isValidAppDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s)&&s>='1000-01-01'&&s<='9999-12-31'; }
 function requireValidDate(id,msg='請輸入完整 4 位數年份日期'){
   const el=document.getElementById(id);
@@ -5009,8 +5030,12 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.97';
+const APP_VERSION='2.98';
 const CHANGELOG=[
+  {version:'2.98',date:'2026-10-13',items:[
+    '開啟 App 時先顯示載入狀態，確認帳號後立即進入記帳畫面，雲端同步繼續進行',
+    '新增與編輯記帳的日期旁加入「今天」按鈕，可一鍵帶入當天日期',
+  ]},
   {version:'2.97',date:'2026-10-11',items:[
     '手機版 Google 登入受阻時，可改用原帳號的 Email 與密碼登入，並可重設密碼',
   ]},
@@ -5901,9 +5926,10 @@ if(navigator.standalone){
 _auth.onAuthStateChanged(async user=>{
   clearTimeout(_syncTimer);
   _fbUser=user;
+  const overlay=document.getElementById('login-overlay');
   if(user){
-    const overlay=document.getElementById('login-overlay');
     overlay.style.display='flex'; overlay.style.opacity='1';
+    overlay.classList.add('loading');
     try{
       if(switchLocalAccount(user.uid)){
         localStorage.setItem('vic2_last_email',user.email);
@@ -5912,21 +5938,23 @@ _auth.onAuthStateChanged(async user=>{
       }
     } catch(error){
       console.error(error);
+      overlay.classList.remove('loading');
       document.getElementById('login-error').textContent='無法切換本機帳號資料，請確認裝置儲存空間。';
       setSyncDot('error');
       return;
     }
     document.getElementById('acct-email').textContent=user.email;
+    overlay.style.opacity='0';
+    setTimeout(()=>{ if(_fbUser?.uid===user.uid) overlay.style.display='none'; },300);
     await syncFromCloud();
     if(_fbUser?.uid!==user.uid) return;
-    overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await migrateImportedMainCategories2026();
   } else {
     try{ switchLocalAccount(null); }
     catch(error){ console.error(error); }
     loadAppTitle();
-    const overlay=document.getElementById('login-overlay');
     overlay.style.display='flex'; overlay.style.opacity='1';
+    overlay.classList.remove('loading');
     document.getElementById('google-login-btn').disabled=false;
     document.getElementById('login-error').textContent='';
     setSyncDot('');
