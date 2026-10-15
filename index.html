@@ -65,10 +65,16 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .btn-submit:active{transform:scale(.98)}
 .search-row{display:flex;gap:8px;margin-bottom:10px}
 .records-sticky-top{position:sticky;top:0;z-index:80;background:#F0F2F5;margin:0 -12px 10px;padding:0 12px 6px}
-.search-input{flex:1;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff}
+.search-input{flex:1;min-width:0;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff}
 .search-input:focus{outline:none;border-color:var(--primary)}
 .filter-toggle{padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;white-space:nowrap;color:#6B7280}
 .filter-toggle.active{border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
+.record-select-toggle{padding:10px 11px;border:1.5px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;white-space:nowrap;color:#6B7280}
+.record-select-toggle.active{border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
+.record-selection-summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;margin-bottom:8px;border:1px solid var(--primary-border);border-radius:8px;background:var(--primary-tint);font-size:12px;color:#374151}
+.record-selection-summary[hidden]{display:none}
+.record-selection-total{margin-left:auto;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary-deep)}
+.record-selection-clear{border:none;background:transparent;color:var(--primary);font-size:12px;font-weight:700;cursor:pointer;padding:4px}
 .filter-clear{padding:10px 13px;border:1.5px solid #EF4444;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;color:#EF4444}
 .filter-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none}
 .filter-card.open{display:block}
@@ -118,6 +124,9 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .ctx-menu-btn:hover{background:#F3F4F6}
 .ctx-menu-btn.danger{color:#EF4444}
 .tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6;transition:transform .25s cubic-bezier(.25,1,.5,1);background:#fff;position:relative;z-index:2}
+.tx-item.selected{background:var(--primary-tint)}
+.tx-select-check{width:21px;height:21px;margin-right:10px;border:1.5px solid #C9D0DD;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:14px;font-weight:700}
+.tx-item.selected .tx-select-check{background:var(--primary);border-color:var(--primary)}
 .tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .tx-body{flex:1;min-width:0;margin:0 10px}
@@ -247,7 +256,8 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-report-section{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .cc-report-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:8px}
 .cc-report-title{font-size:14px;font-weight:800;color:#1A1A2E;margin-bottom:8px}
-.cc-report-card-meta{font-size:11px;color:#9BA3AF;text-align:right;white-space:nowrap}
+.cc-report-card-head>div:first-child{min-width:0}
+.cc-report-card-meta{font-size:11px;color:#9BA3AF;text-align:right;max-width:58%;flex-shrink:0;overflow-wrap:anywhere}
 .cc-report-table{width:100%;border-collapse:collapse;font-size:12px}
 .cc-report-table th,.cc-report-table td{padding:7px 5px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .cc-report-table th{background:#F8FAFC;font-weight:700;color:#374151;border-bottom:2px solid #E5E7EB}
@@ -263,6 +273,8 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-report-detail-sub{color:#6B7280;font-weight:700}
 .cc-report-detail-amount{font-size:12px;font-weight:700;white-space:nowrap;text-align:right}
 .cc-report-detail-note{margin-top:4px;padding-left:52px;color:#6B7280;font-size:12px;line-height:1.45;white-space:normal;word-break:break-word}
+.cc-report-detail-extra{margin-top:4px;padding-left:52px;color:#6B7280;font-size:11px;line-height:1.45}
+.cc-report-card-meta .cc-report-gross{font-size:11px;font-weight:500;color:#6B7280}
 .cc-report-empty{text-align:center;padding:28px 8px;color:#9BA3AF;font-size:13px}
 .qm-table{border-collapse:collapse;font-size:11px;min-width:720px;width:100%}
 .qm-table th,.qm-table td{padding:5px 7px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
@@ -685,6 +697,14 @@ input[type=number]{-moz-appearance:textfield}
           </div>
           <div class="share-preview" id="share-preview"></div>
         </div>
+        <div class="form-group" id="f-advance-for-wrap">
+          <label class="form-label" for="f-advance-for">代墊對象（支出時選填）</label>
+          <input type="text" form="add-form" class="form-control" id="f-advance-for" maxlength="30" placeholder="例如：父母">
+        </div>
+        <div class="form-group" id="f-advance-repayment-wrap">
+          <label class="form-label" for="f-advance-repayment-for">對應代墊（收款時選填）</label>
+          <select form="add-form" class="form-control" id="f-advance-repayment-for"></select>
+        </div>
         <button class="btn-submit" id="btn-add-submit">➕ 新增記帳</button>
       </div>
     </div>
@@ -696,6 +716,7 @@ input[type=number]{-moz-appearance:textfield}
           <input type="text" class="search-input" id="search-input" placeholder="🔍 搜尋類別、備註、金額...">
           <button class="filter-clear" id="filter-clear" style="display:none" onclick="clearFilters()">✕ 清除</button>
           <button class="filter-toggle" id="filter-toggle">篩選</button>
+          <button class="record-select-toggle" id="record-select-toggle" type="button" aria-pressed="false" onclick="toggleRecordSelection()">加總</button>
         </div>
         <div class="filter-card" id="filter-card">
           <div class="filter-mode-row">
@@ -743,6 +764,11 @@ input[type=number]{-moz-appearance:textfield}
           </div>
         </div>
         <div id="records-summary" class="records-summary" style="display:none"></div>
+        <div id="record-selection-summary" class="record-selection-summary" aria-live="polite" hidden>
+          <span id="record-selection-count">已選 0 筆</span>
+          <strong id="record-selection-total" class="record-selection-total">合計 $0</strong>
+          <button type="button" class="record-selection-clear" onclick="clearRecordSelection()">清除</button>
+        </div>
       </div>
       <div id="records-cat-stats" style="display:none"></div>
       <div id="records-list"></div>
@@ -1200,6 +1226,14 @@ input[type=number]{-moz-appearance:textfield}
         <span style="font-size:13px;color:#6B7280">%</span>
       </div>
     </div>
+    <div class="form-group" id="e-advance-for-wrap" style="display:none">
+      <label class="form-label" for="e-advance-for">代墊對象（選填）</label>
+      <input type="text" class="form-control" id="e-advance-for" maxlength="30" placeholder="例如：父母">
+    </div>
+    <div class="form-group" id="e-advance-repayment-wrap" style="display:none">
+      <label class="form-label" for="e-advance-repayment-for">對應代墊（選填）</label>
+      <select class="form-control" id="e-advance-repayment-for"></select>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="btn-delete">🗑 刪除</button>
       <button class="btn btn-primary" id="btn-save">💾 儲存</button>
@@ -1506,6 +1540,7 @@ function gfNextRepayTarget(data, repayDate='', main='', sub=''){
     .sort((a,b)=>a.record.date.localeCompare(b.record.date)||a.record.id.localeCompare(b.record.id))[0]||null;
 }
 function reportAdjustedAmount(r, gfSettle){
+  if(r.advanceFor||r.advanceRepaymentFor) return 0;
   if(r.split==='repay') return 0;
   if(!gfHasShare(r)) return r.amount;
   const paid=Math.min(Math.abs(r.amount),gfSettle.byId[r.id]?.paid||0);
@@ -1516,6 +1551,58 @@ function reportAdjustedRecords(data){
   return data
     .map(r=>({...r,amount:reportAdjustedAmount(r,gfSettle)}))
     .filter(r=>Math.round(Math.abs(r.amount||0))!==0);
+}
+function advanceRepayments(data,id){
+  return data.filter(r=>r.advanceRepaymentFor===id&&r.amount>0);
+}
+function advanceRemaining(r,data){
+  const paid=advanceRepayments(data,r.id).reduce((s,x)=>s+x.amount,0);
+  return Math.max(0,Math.abs(r.amount)-paid);
+}
+function advanceReceiptError(receipt,target,data){
+  if(!target||!target.advanceFor||target.amount>=0||target.id===receipt.id) return '找不到對應的代墊支出';
+  if(receipt.amount<=0||receipt.advanceFor||receipt.split==='repay'||isCCMethod(receipt.method)) return '收款須為正數，且不可使用信用卡或女友已分攤';
+  if(receipt.date<target.date) return '收款日期不能早於代墊日期';
+  const otherPaid=advanceRepayments(data,target.id).filter(r=>r.id!==receipt.id).reduce((s,r)=>s+r.amount,0);
+  if(receipt.amount>Math.abs(target.amount)-otherPaid) return '收款金額超過這筆代墊的待收回金額';
+  return '';
+}
+function updateAdvanceFields(prefix,recordId=null,initialLink){
+  const data=loadRecords();
+  const amount=parseAmt(document.getElementById(`${prefix}-amount`).value);
+  const type=document.getElementById(`${prefix}-type`).value;
+  const method=document.getElementById(`${prefix}-method`).value;
+  const date=document.getElementById(`${prefix}-date`).value;
+  const split=prefix==='f'?addSplit:editSplit;
+  const forEl=document.getElementById(`${prefix}-advance-for`);
+  const linkEl=document.getElementById(`${prefix}-advance-repayment-for`);
+  const selected=initialLink===undefined?linkEl.value:initialLink;
+  document.getElementById(`${prefix}-advance-for-wrap`).style.display=prefix==='f'||(amount<0&&['費用','成本'].includes(type)&&split===null)||forEl.value?'block':'none';
+  document.getElementById(`${prefix}-advance-repayment-wrap`).style.display=prefix==='f'||(amount>0&&split!=='repay'&&!isCCMethod(method))||selected?'block':'none';
+  linkEl.replaceChildren();
+  const blank=document.createElement('option'); blank.value=''; blank.textContent='不連結代墊'; linkEl.appendChild(blank);
+  const targets=data.filter(r=>r.advanceFor&&r.amount<0&&r.id!==recordId&&r.date<=date&&(advanceRemaining(r,data)>0||r.id===selected))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  if(selected&&!targets.some(r=>r.id===selected)){
+    const old=data.find(r=>r.id===selected);
+    if(old) targets.push(old);
+  }
+  targets.forEach(r=>{
+    const option=document.createElement('option'); option.value=r.id;
+    const current=data.find(x=>x.id===recordId);
+    const available=advanceRemaining(r,data)+(current?.advanceRepaymentFor===r.id&&current.amount>0?current.amount:0);
+    option.textContent=`${r.date} · ${r.advanceFor} · ${r.method} · ${r.main||r.type}${r.sub?'／'+r.sub:''}${r.note?' · '+r.note.slice(0,24):''} · 待收 $${fmt(available)}`;
+    linkEl.appendChild(option);
+  });
+  linkEl.value=selected;
+}
+function creditCardOwnAmount(r){
+  return r.advanceFor?0:Math.abs(vicShare(r.amount,r.split));
+}
+function creditCardPendingAmount(r,data,gfSettle){
+  if(r.advanceFor) return advanceRemaining(r,data);
+  if(gfHasShare(r)) return gfSettle.byId[r.id]?.remaining??gfOwes(r.amount,r.split);
+  return 0;
 }
 function gfStatusText(item){
   if(!item) return '';
@@ -1681,12 +1768,13 @@ function loadAppTitle(){
 }
 
 function updateHeaderSub(){
-  const data=reportAdjustedRecords(loadRecords());
+  const raw=loadRecords();
+  const data=reportAdjustedRecords(raw);
   const year=localDateStr().slice(0,4);
   const yd=data.filter(r=>r.date.startsWith(year));
   const exp=yd.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
   const inc=yd.filter(r=>r.amount>0&&r.type==='收入').reduce((s,r)=>s+r.amount,0);
-  document.getElementById('header-sub').textContent=`今年支出 ${fmt(Math.abs(exp))} · 收入 ${fmt(inc)} · 共 ${yd.length} 筆`;
+  document.getElementById('header-sub').textContent=`今年支出 ${fmt(Math.abs(exp))} · 收入 ${fmt(inc)} · 共 ${raw.filter(r=>r.date&&r.date.startsWith(year)).length} 筆`;
 }
 
 // ─── Form population ───────────────────────────────────────────────────────
@@ -2232,9 +2320,10 @@ function initFormListeners(){
     if(mainEl.value==='貸款') applyLoanDefaults(!!subEl.value);
     if(addSplit==='repay') applyGFRepayTargetDefaults();
     updateSharePreview();
+    updateAdvanceFields('f');
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'f'));
-  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); });
+  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); updateAdvanceFields('f'); });
   amtEl.addEventListener('blur',()=>{ updateSharePreview(); updateInstallPreview(); });
   document.getElementById('f-install-count').addEventListener('input',updateInstallPreview);
 
@@ -2264,11 +2353,12 @@ function initFormListeners(){
         if(addSplit==='repay') applyGFRepayTargetDefaults();
       }
       updateSharePreview();
+      updateAdvanceFields('f');
     });
   });
   document.getElementById('f-custom-pct').addEventListener('input',()=>{
     const pct=parseFloat(document.getElementById('f-custom-pct').value);
-    if(!isNaN(pct)&&pct>=0&&pct<=100){ addSplit=1-pct/100; updateSharePreview(); }
+    if(!isNaN(pct)&&pct>=0&&pct<=100){ addSplit=1-pct/100; updateSharePreview(); updateAdvanceFields('f'); }
   });
 
   document.getElementById('f-method').addEventListener('change',()=>{
@@ -2277,6 +2367,7 @@ function initFormListeners(){
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
+    updateAdvanceFields('f');
   });
   document.getElementById('f-type').addEventListener('change',()=>{
     autoFillAmtSign();
@@ -2285,6 +2376,7 @@ function initFormListeners(){
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
+    updateAdvanceFields('f');
   });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   document.getElementById('add-form').addEventListener('submit',e=>{
@@ -2301,6 +2393,7 @@ function initFormListeners(){
   const initIsCC=isCCMethod(initMethod);
   document.getElementById('f-install-extra').style.display=initIsCC?'flex':'none';
   if(!initIsCC) resetInstall('f');
+  updateAdvanceFields('f');
 }
 
 function autoFillAmtSign(){
@@ -2395,8 +2488,14 @@ function resetInstall(prefix){
 function submitAdd(){
   const date=document.getElementById('f-date').value;
   const amount=parseAmt(document.getElementById('f-amount').value);
+  const advanceFor=document.getElementById('f-advance-for').value.trim();
+  const advanceRepaymentFor=document.getElementById('f-advance-repayment-for').value;
   if(!requireValidDate('f-date')) return;
   if(!amount){ showToast('請填寫金額'); return; }
+  if(advanceFor&&(amount>=0||!['費用','成本'].includes(document.getElementById('f-type').value)||addSplit!==null)){
+    showToast('代墊須為費用或成本，且不可同時選女友分攤'); return;
+  }
+  if(advanceFor&&advanceRepaymentFor){ showToast('一筆記錄不能同時是代墊與收款'); return; }
   const rec={
     id:genId(), date,
     type:document.getElementById('f-type').value,
@@ -2405,6 +2504,13 @@ function submitAdd(){
     sub:document.getElementById('f-sub').value,
     amount, note:document.getElementById('f-note').value.trim(), split:addSplit,
   };
+  if(advanceFor) rec.advanceFor=advanceFor;
+  const data=loadRecords();
+  if(advanceRepaymentFor){
+    const error=advanceReceiptError(rec,data.find(r=>r.id===advanceRepaymentFor),data);
+    if(error){ showToast(error); return; }
+    rec.advanceRepaymentFor=advanceRepaymentFor;
+  }
   const main=document.getElementById('f-main').value;
   if(main==='貸款'){
     const p=parseAmt(document.getElementById('f-loan-p').value);
@@ -2416,7 +2522,7 @@ function submitAdd(){
     const n=parseInt(document.getElementById('f-install-count').value);
     if(n>=2){ rec.installments=n; rec.billedDate=date; }
   }
-  const data=loadRecords(); data.push(rec); saveRecords(data);
+  data.push(rec); saveRecords(data);
   showToast('✅ 記帳成功！');
   resetAddForm({type:rec.type,main:rec.main}); updateHeaderSub();
 }
@@ -2426,6 +2532,8 @@ function resetAddForm(lastRec=null){
   document.getElementById('f-amount').value='';
   autoFillAmtSign();
   document.getElementById('f-note').value='';
+  document.getElementById('f-advance-for').value='';
+  document.getElementById('f-advance-repayment-for').value='';
   const mainEl=document.getElementById('f-main');
   const keepDebtMain=lastRec?.type==='清償負債'&&lastRec.main&&[...mainEl.options].some(op=>op.value===lastRec.main);
   mainEl.value=keepDebtMain?lastRec.main:'';
@@ -2444,6 +2552,7 @@ function resetAddForm(lastRec=null){
   document.getElementById('f-custom-pct').value='';
   document.getElementById('share-preview').classList.remove('show');
   updateInstallPreview();
+  updateAdvanceFields('f');
 }
 
 // ─── Records ───────────────────────────────────────────────────────────────
@@ -2543,6 +2652,59 @@ function flowSummaryHTML(records){
   if(exp) parts.push("流出 "+fmt(Math.abs(exp)));
   return parts.map(p=>"<span>"+p+"</span>").join("");
 }
+let recordSelectionMode=false;
+const selectedRecordIds=new Set();
+
+function toggleRecordSelection(){
+  recordSelectionMode=!recordSelectionMode;
+  selectedRecordIds.clear();
+  if(_swOpen){ _swReset(_swOpen); _swOpen=null; }
+  _sw=null;
+  document.getElementById('record-context-menu').classList.remove('open');
+  renderRecords();
+}
+
+function clearRecordSelection(){
+  selectedRecordIds.clear();
+  document.querySelectorAll('#records-list .tx-item.selected').forEach(item=>{
+    item.classList.remove('selected');
+    item.setAttribute('aria-checked','false');
+    item.querySelector('.tx-select-check').textContent='';
+  });
+  updateRecordSelectionSummary(loadRecords());
+}
+
+function toggleRecordSelectionItem(item){
+  const id=item?.dataset.rid;
+  if(!id) return;
+  if(selectedRecordIds.has(id)) selectedRecordIds.delete(id);
+  else selectedRecordIds.add(id);
+  const selected=selectedRecordIds.has(id);
+  item.classList.toggle('selected',selected);
+  item.setAttribute('aria-checked',String(selected));
+  item.querySelector('.tx-select-check').textContent=selected?'✓':'';
+  updateRecordSelectionSummary(loadRecords());
+}
+
+function updateRecordSelectionSummary(records){
+  const toggle=document.getElementById('record-select-toggle');
+  const summary=document.getElementById('record-selection-summary');
+  toggle.classList.toggle('active',recordSelectionMode);
+  toggle.setAttribute('aria-pressed',String(recordSelectionMode));
+  toggle.textContent=recordSelectionMode?'完成':'加總';
+  summary.hidden=!recordSelectionMode;
+  if(!recordSelectionMode) return;
+  const existingIds=new Set(records.map(r=>r.id));
+  for(const id of selectedRecordIds) if(!existingIds.has(id)) selectedRecordIds.delete(id);
+  const selected=records.filter(r=>selectedRecordIds.has(r.id));
+  const hidden=selected.length-document.querySelectorAll('#records-list .tx-item.selected').length;
+  const total=selected.reduce((sum,r)=>sum+Number(r.amount||0),0);
+  document.getElementById('record-selection-count').textContent=`已選 ${selected.length} 筆${hidden?`（${hidden} 筆未顯示）`:''}`;
+  const totalEl=document.getElementById('record-selection-total');
+  totalEl.textContent=`合計 ${total<0?'-':''}$${Math.abs(total).toLocaleString('zh-TW',{maximumFractionDigits:2})}`;
+  totalEl.className='record-selection-total'+(total<0?' clr-expense':total>0?' clr-income':'');
+}
+
 function renderRecords(){
   const allRecords=loadRecords();
   const gfSettle=gfSettlement(allRecords);
@@ -2561,7 +2723,7 @@ function renderRecords(){
     const activeSplits=[...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')].map(b=>b.dataset.val);
     const showGfShareStats=activeSplits.some(v=>['half','gf'].includes(v));
     if(showGfShareStats){
-      const myTotal=filtered.reduce((s,r)=>s+Math.abs(vicShare(r.amount,r.split)),0);
+      const myTotal=filtered.reduce((s,r)=>s+(r.advanceFor||r.advanceRepaymentFor?0:Math.abs(vicShare(r.amount,r.split))),0);
       const gfTotal=filtered.reduce((s,r)=>{
         if(!gfHasShare(r)) return s;
         const item=gfSettle.byId[r.id];
@@ -2576,8 +2738,8 @@ function renderRecords(){
     filtered.forEach(r=>{
       const m=r.main||r.type||'其他', s=r.sub||'';
       if(!mainMap[m]) mainMap[m]={vic:0,gf:0,subs:{}};
-      const v=vicShare(r.amount,r.split);
-      const g=showGfShareStats&&gfHasShare(r)
+      const v=r.advanceFor||r.advanceRepaymentFor?0:vicShare(r.amount,r.split);
+      const g=r.advanceFor||r.advanceRepaymentFor?0:showGfShareStats&&gfHasShare(r)
         ? (gfSettle.byId[r.id]?.remaining ?? gfOwes(r.amount,r.split))
         : r.amount-v;
       mainMap[m].vic+=v; mainMap[m].gf+=g;
@@ -2610,7 +2772,7 @@ function renderRecords(){
   } else { sumEl.style.display='none'; catEl.style.display='none'; }
   if(!filtered.length){
     list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">沒有符合的記錄</div><div class="empty-sub">試著新增一筆或調整篩選條件</div></div>';
-    updateClearBtn(); return;
+    updateClearBtn(); updateRecordSelectionSummary(allRecords); return;
   }
   const groups={};
   filtered.forEach(r=>{ (groups[r.date]=groups[r.date]||[]).push(r); });
@@ -2622,33 +2784,39 @@ function renderRecords(){
     const month=date.slice(0,7);
     const monthHeader=month!==lastMonth?(lastMonth=month,`<div class="date-month-label"><span class="date-month-title">${formatMonthLabel(month)}</span><span class="date-month-summary">${flowSummaryHTML(monthGroups[month])}</span></div>`):"";
     return `${monthHeader}<div class="date-group-label">${formatDateLabel(date)}</div>
-      <div class="card" style="padding:4px 14px">${groups[date].map(r=>txItemHTML(r,gfSettle.byId[r.id])).join('')}</div>`;
+      <div class="card" style="padding:4px 14px">${groups[date].map(r=>txItemHTML(r,gfSettle.byId[r.id],allRecords)).join('')}</div>`;
   }).join('');
   updateClearBtn();
+  updateRecordSelectionSummary(allRecords);
 }
 
-function txItemHTML(r,gfItem=null){
+function txItemHTML(r,gfItem=null,allRecords=[]){
   const ic=catIcon(r.main||r.type), bg=catBg(r.main||r.type);
   const amtCls=r.amount<0?'clr-expense':r.amount>0?'clr-income':'clr-transfer';
   const amtStr=fmt(Math.abs(r.amount));
   const vc=vicShare(r.amount,r.split);
-  const vicStr=r.split!==null&&r.split!=='repay'?`Vic: ${vc>0?'+':''}${fmt(Math.abs(vc))}`:'';
+  const vicStr=r.advanceFor?'我的支出: 0':typeof r.split==='number'?`Vic: ${vc>0?'+':''}${fmt(Math.abs(vc))}`:'';
   const splitBadge=r.split===0?'<span class="badge badge-gf">全女友</span>'
     :r.split===1?'<span class="badge badge-half">各半</span>'
     :(typeof r.split==='number'&&r.split>0&&r.split<1)?`<span class="badge" style="background:#F5F3FF;color:#7C3AED">女${Math.round((1-r.split)*100)}%</span>`
     :r.split==='repay'?'<span class="badge badge-repay">女友還款</span>':'';
   const installBadge=r.installments>1?`<span class="badge badge-install">分${r.installments}期</span>`:'';
-  const badge=splitBadge+installBadge;
+  const advanceBadge=r.advanceFor?`<span class="badge badge-half">代墊 ${htmlEsc(r.advanceFor)}</span>`:
+    r.advanceRepaymentFor?'<span class="badge badge-repay">代墊收回</span>':'';
+  const badge=splitBadge+installBadge+advanceBadge;
   const mainLine=[r.method&&r.method!=='無'?r.method:null,r.main||r.type,r.sub].filter(Boolean).join(' · ');
+  const selected=recordSelectionMode&&selectedRecordIds.has(r.id);
   return `<div class="tx-swipe-wrap">
     <div class="tx-copy-btn" onclick="copyRecord('${r.id}')">複製</div>
     <div class="tx-del-btn" onclick="swipeDelete('${r.id}')">刪除</div>
-    <div class="tx-item" data-rid="${r.id}">
+    <div class="tx-item${selected?' selected':''}" data-rid="${r.id}"${recordSelectionMode?` role="checkbox" aria-checked="${selected}" tabindex="0"`:''}>
+      ${recordSelectionMode?`<span class="tx-select-check" aria-hidden="true">${selected?'✓':''}</span>`:''}
       <div class="tx-icon-wrap ${bg}">${ic}</div>
       <div class="tx-body">
-        <div class="tx-main">${mainLine} ${badge}</div>
-        ${r.note?`<div class="tx-note">${r.note}</div>`:''}
+        <div class="tx-main">${htmlEsc(mainLine)} ${badge}</div>
+        ${r.note?`<div class="tx-note">${htmlEsc(r.note)}</div>`:''}
         ${gfItem?`<div class="gf-status-line ${gfStatusClass(gfItem)}">${gfStatusText(gfItem)}</div>`:''}
+        ${r.advanceFor?`<div class="gf-status-line">待收回 ${fmt(advanceRemaining(r,allRecords))}</div>`:''}
       </div>
       <div class="tx-right">
         <div class="tx-amount-val ${amtCls}">${amtStr}</div>
@@ -2667,9 +2835,17 @@ function initSwipeDelete(){
   list.addEventListener('touchend',_swEnd,{passive:true});
   list.addEventListener('touchcancel',_swEnd,{passive:true});
   list.addEventListener('click',_swClick,true);
+  list.addEventListener('keydown',e=>{
+    if(!recordSelectionMode||!['Enter',' '].includes(e.key)) return;
+    const item=e.target.closest('.tx-item');
+    if(!item) return;
+    e.preventDefault();
+    toggleRecordSelectionItem(item);
+  });
   initRecordContextMenu(list);
 }
 function _swStart(e){
+  if(recordSelectionMode) return;
   if(e.target.closest('.tx-del-btn')||e.target.closest('.tx-copy-btn')) return;
   const item=e.target.closest('.tx-item');
   if(_swOpen&&_swOpen!==item){ _swReset(_swOpen); _swOpen=null; }
@@ -2698,6 +2874,11 @@ function _swReset(item){ item.style.transform=''; item._swOpen=false; }
 function _swClick(e){
   const item=e.target.closest('.tx-item');
   if(!item) return;
+  if(recordSelectionMode){
+    e.preventDefault(); e.stopPropagation();
+    toggleRecordSelectionItem(item);
+    return;
+  }
   if(item._swOpen){ e.stopPropagation(); _swReset(item); _swOpen=null; return; }
   if(_swOpen&&_swOpen!==item){ e.stopPropagation(); _swReset(_swOpen); _swOpen=null; return; }
   // Normal tap → open edit
@@ -2712,6 +2893,7 @@ function initRecordContextMenu(list){
     const item=e.target.closest('.tx-item');
     if(!item) return;
     e.preventDefault();
+    if(recordSelectionMode) return;
     if(_swOpen){ _swReset(_swOpen); _swOpen=null; }
     _ctxRid=item.dataset.rid;
     menu.classList.add('open');
@@ -2732,7 +2914,9 @@ function initRecordContextMenu(list){
 }
 function swipeDelete(id){
   _swOpen=null;
-  saveRecords(loadRecords().filter(x=>x.id!==id));
+  const data=loadRecords().filter(x=>x.id!==id);
+  data.forEach(r=>{ if(r.advanceRepaymentFor===id) delete r.advanceRepaymentFor; });
+  saveRecords(data);
   renderRecords(); updateHeaderSub(); renderStats(); showToast('🗑 已刪除');
   scheduleSyncToCloud();
 }
@@ -2742,6 +2926,8 @@ function copyRecord(id){
   const orig=records.find(r=>r.id===id);
   if(!orig) return;
   const copy={...orig, id:genId()};
+  delete copy.advanceRepaymentFor;
+  delete copy.advanceGenerated;
   records.unshift(copy);
   saveRecords(records);
   renderRecords(); updateHeaderSub(); renderStats(); showToast('✅ 已複製');
@@ -2763,15 +2949,18 @@ function initEditListeners(){
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     if(!isCC) resetInstall('e');
+    updateAdvanceFields('e',currentEditId);
   });
   document.getElementById('e-type').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
     refreshMainSelectKeepValues('e');
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
+    updateAdvanceFields('e',currentEditId);
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
-  document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
+  document.getElementById('e-amount').addEventListener('input',()=>{ calcLoanInterest('e'); updateAdvanceFields('e',currentEditId); });
+  document.getElementById('e-date').addEventListener('change',()=>updateAdvanceFields('e',currentEditId));
   document.getElementById('btn-save').addEventListener('click',saveEdit);
   document.getElementById('btn-delete').addEventListener('click',deleteEdit);
   document.getElementById('edit-overlay').addEventListener('keydown',e=>{
@@ -2815,6 +3004,7 @@ function openEdit(id){
   }
   document.getElementById('e-amount').value=fmtInput(r.amount);
   document.getElementById('e-note').value=r.note||'';
+  document.getElementById('e-advance-for').value=r.advanceFor||'';
   const installExtra=document.getElementById('e-install-extra');
   const isCC=isCCMethod(r.method);
   installExtra.style.display=isCC?'block':'none';
@@ -2828,15 +3018,16 @@ function openEdit(id){
   loanExtra.style.display=r.main==='貸款'?'block':'none';
   document.getElementById('e-loan-p').value=r.loanPrincipal?fmtInput(r.loanPrincipal):'';
   document.getElementById('e-loan-i').value=r.loanInterest?fmtInput(r.loanInterest):'';
-  editSplit=r.split;
+  editSplit=r.split??null;
   const isCustomSplit=typeof r.split==='number'&&r.split>0&&r.split<1;
-  const sv=r.split===null?'null':r.split==='repay'?'repay':isCustomSplit?'custom':String(r.split);
+  const sv=editSplit===null?'null':r.split==='repay'?'repay':isCustomSplit?'custom':String(r.split);
   document.querySelectorAll('#edit-overlay .split-opt').forEach(b=>b.classList.toggle('active',b.dataset.v===sv));
   const eWrap=document.getElementById('e-custom-wrap');
   if(isCustomSplit){
     eWrap.style.display='flex';
     document.getElementById('e-custom-pct').value=Math.round((1-r.split)*100);
   } else { eWrap.style.display='none'; }
+  updateAdvanceFields('e',id,r.advanceRepaymentFor||'');
   document.getElementById('edit-overlay').classList.add('open');
 }
 
@@ -2852,10 +3043,11 @@ function editSelectSplit(btn){
     eWrap.style.display='none';
     editSplit=btn.dataset.v==='null'?null:btn.dataset.v==='repay'?'repay':Number(btn.dataset.v);
   }
+  updateAdvanceFields('e',currentEditId);
 }
 function editCustomPctChanged(){
   const pct=parseFloat(document.getElementById('e-custom-pct').value);
-  if(!isNaN(pct)&&pct>=0&&pct<=100) editSplit=1-pct/100;
+  if(!isNaN(pct)&&pct>=0&&pct<=100){ editSplit=1-pct/100; updateAdvanceFields('e',currentEditId); }
 }
 
 function closeModal(){ document.getElementById('edit-overlay').classList.remove('open'); currentEditId=null; }
@@ -2874,6 +3066,30 @@ function saveEdit(){
     amount:parseAmt(document.getElementById('e-amount').value)||data[idx].amount,
     note:document.getElementById('e-note').value.trim(), split:editSplit,
   };
+  const advanceFor=document.getElementById('e-advance-for').value.trim();
+  const advanceRepaymentFor=document.getElementById('e-advance-repayment-for').value;
+  if(advanceFor&&(updated.amount>=0||!['費用','成本'].includes(updated.type)||editSplit!==null)){
+    showToast('代墊須為費用或成本，且不可同時選女友分攤'); return;
+  }
+  if(advanceFor&&advanceRepaymentFor){ showToast('一筆記錄不能同時是代墊與收款'); return; }
+  const linked=advanceRepayments(data,updated.id);
+  if(advanceFor&&linked.reduce((s,r)=>s+r.amount,0)>Math.abs(updated.amount)){
+    showToast('已收回金額超過代墊金額，請先調整收款記錄'); return;
+  }
+  if(advanceFor) updated.advanceFor=advanceFor;
+  else {
+    if(linked.length&&!confirm('取消代墊會解除收款關聯；原本登記的收款將改列一般收入。確定嗎？')) return;
+    delete updated.advanceFor;
+    data.forEach(r=>{ if(r.advanceRepaymentFor===updated.id) delete r.advanceRepaymentFor; });
+  }
+  if(advanceRepaymentFor){
+    const error=advanceReceiptError(updated,data.find(r=>r.id===advanceRepaymentFor),data);
+    if(error){ showToast(error); return; }
+    updated.advanceRepaymentFor=advanceRepaymentFor;
+  } else {
+    delete updated.advanceRepaymentFor;
+    delete updated.advanceGenerated;
+  }
   if(isCCMethod(updated.method)&&document.getElementById('e-install-toggle').classList.contains('active')){
     const n=parseInt(document.getElementById('e-install-count').value);
     if(n>=2){
@@ -2894,7 +3110,9 @@ function saveEdit(){
 function deleteEdit(){
   if(!currentEditId) return;
   if(!confirm('確定刪除這筆記帳？')) return;
-  saveRecords(loadRecords().filter(x=>x.id!==currentEditId));
+  const data=loadRecords().filter(x=>x.id!==currentEditId);
+  data.forEach(r=>{ if(r.advanceRepaymentFor===currentEditId) delete r.advanceRepaymentFor; });
+  saveRecords(data);
   closeModal(); renderRecords(); updateHeaderSub(); showToast('🗑 已刪除');
 }
 
@@ -2961,9 +3179,18 @@ function saveReportState(){
   localStorage.setItem(KEY_REPORT_STATE,JSON.stringify({year:reportYear,month:reportMonth}));
 }
 function syncReportMonthButtons(){
-  document.querySelectorAll('#rep-month-selector .rep-month-btn').forEach(b=>{
-    b.classList.toggle('active',parseInt(b.dataset.m,10)===reportMonth);
+  const selector=document.getElementById('rep-month-selector');
+  let active=null;
+  selector.querySelectorAll('.rep-month-btn').forEach(b=>{
+    const selected=parseInt(b.dataset.m,10)===reportMonth;
+    b.classList.toggle('active',selected);
+    if(selected) active=b;
   });
+  if(!active||!selector.clientWidth) return;
+  const bounds=selector.getBoundingClientRect();
+  const monthBounds=active.getBoundingClientRect();
+  if(monthBounds.right>bounds.right) selector.scrollLeft+=monthBounds.right-bounds.right+6;
+  else if(monthBounds.left<bounds.left) selector.scrollLeft-=bounds.left-monthBounds.left+6;
 }
 const _reportState=loadReportState();
 let reportYear=_reportState.year, reportMonth=_reportState.month, repView='year';
@@ -3164,39 +3391,46 @@ function populateCreditCardReportFilters(){
   renderCreditCardReportNav([]);
 }
 function getCreditCardReportRecords(){
+  const data=loadRecords();
   const cards=new Set(loadMG()['信用卡']||[]);
   const pfx=reportMonth===0?`${reportYear}-`:`${reportYear}-${String(reportMonth).padStart(2,'0')}`;
-  return reportAdjustedRecords(loadRecords())
+  const gfSettle=gfSettlement(data);
+  return data
     .filter(r=>r.date&&r.date.startsWith(pfx))
     .filter(r=>cards.has(r.method))
     .filter(r=>r.type!=='清償負債'&&r.main!=='繳信用卡款'&&r.amount<0)
+    .map(r=>({...r,ownAmount:creditCardOwnAmount(r),pendingAmount:creditCardPendingAmount(r,data,gfSettle)}))
     .sort((a,b)=>b.date.localeCompare(a.date));
 }
 function renderCreditCardReport(){
   const rows=getCreditCardReportRecords();
   renderCreditCardReportNav(rows);
   const total=rows.reduce((s,r)=>s+Math.abs(r.amount),0);
+  const own=rows.reduce((s,r)=>s+r.ownAmount,0);
+  const pending=rows.reduce((s,r)=>s+r.pendingAmount,0);
   const count=rows.length;
   const byCard=sumCreditCardRows(rows,r=>r.method||'未命名信用卡');
-  const byMain=sumCreditCardRows(rows,r=>r.main||'未分類');
+  const byMain=sumCreditCardRows(rows,r=>r.main||'未分類',r=>r.ownAmount).filter(x=>x.amount>0);
   const topCard=byCard[0];
   const topCat=byMain[0];
   const scope=reportMonth===0?`${reportYear} 年`:`${reportYear} 年 ${reportMonth} 月`;
   document.getElementById('cc-report-summary').innerHTML=[
     ['期間',scope],
-    ['刷卡總額',`$${fmt(total)}`],
+    ['實際刷卡',`$${fmt(total)}`],
+    ['我的支出',`$${fmt(own)}`],
+    ['目前待收回',`$${fmt(pending)}`],
     ['筆數',`${fmt(count)} 筆`],
-    ['最大分類',topCat?`${escHtml(topCat.label)} $${fmt(topCat.amount)}`:'−'],
-    ['最大信用卡',topCard?`${escHtml(topCard.label)} $${fmt(topCard.amount)}`:'−'],
+    ['最大個人分類',topCat?`${escHtml(topCat.label)} $${fmt(topCat.amount)}`:'−'],
+    ['刷最多的卡',topCard?`${escHtml(topCard.label)} $${fmt(topCard.amount)}`:'−'],
   ].map(([k,v])=>`<div class="cc-report-box"><div class="cc-report-box-label">${k}</div><div class="cc-report-box-val">${v}</div></div>`).join('');
   renderCreditCardCardList(rows);
 }
-function sumCreditCardRows(rows,getKey){
+function sumCreditCardRows(rows,getKey,getAmount=r=>Math.abs(r.amount)){
   const map={};
   rows.forEach(r=>{
     const key=getKey(r);
     if(!map[key]) map[key]={label:key,amount:0,count:0};
-    map[key].amount+=Math.abs(r.amount);
+    map[key].amount+=getAmount(r);
     map[key].count+=1;
   });
   return Object.values(map).sort((a,b)=>b.amount-a.amount||b.count-a.count||a.label.localeCompare(b.label,'zh-Hant'));
@@ -3233,9 +3467,11 @@ function renderCreditCardCardList(rows){
 }
 function renderCreditCardSection(card,rows,idx){
   const total=rows.reduce((s,r)=>s+Math.abs(r.amount),0);
-  const top=sumCreditCardRows(rows,r=>r.main||'未分類')[0];
+  const own=rows.reduce((s,r)=>s+r.ownAmount,0);
+  const pending=rows.reduce((s,r)=>s+r.pendingAmount,0);
+  const top=sumCreditCardRows(rows,r=>r.main||'未分類',r=>r.ownAmount).find(x=>x.amount>0);
   const monthly=reportMonth===0?renderCreditCardMonthTable(rows):'';
-  const mainTable=renderCreditCardMainTable(rows,total);
+  const mainTable=renderCreditCardMainTable(rows,own);
   const detail=renderCreditCardDetailTable(rows,idx);
   return `<div class="cc-report-section" id="cc-report-card-${idx}">
     <div class="cc-report-card-head" onclick="toggleCreditCardReportDetail(${idx})">
@@ -3244,28 +3480,30 @@ function renderCreditCardSection(card,rows,idx){
         <div style="font-size:11px;color:#9BA3AF">點選卡片展開 / 收合刷卡明細</div>
       </div>
       <div class="cc-report-card-meta">
-        <div class="${total?'clr-expense':''}" style="font-size:15px;font-weight:800">$${fmt(total)}</div>
+        <div class="${own?'clr-expense':''}" style="font-size:15px;font-weight:800">我的支出 $${fmt(own)}</div>
+        <div class="cc-report-gross">實刷 $${fmt(total)}${pending?` · 待收 $${fmt(pending)}`:''}</div>
         <div>${fmt(rows.length)} 筆${top?` · ${escHtml(top.label)}`:''}</div>
       </div>
     </div>
     ${monthly}
-    <div class="cc-report-title">主類別統計</div>
+    <div class="cc-report-title">主類別統計（我的支出）</div>
     ${mainTable}
     ${detail}
   </div>`;
 }
 function renderCreditCardMonthTable(rows){
   const byMonth=sumCreditCardRows(rows,r=>r.date.slice(0,7)).sort((a,b)=>a.label.localeCompare(b.label));
+  const ownByMonth=Object.fromEntries(sumCreditCardRows(rows,r=>r.date.slice(0,7),r=>r.ownAmount).map(x=>[x.label,x.amount]));
   return `<div class="cc-report-title">每月刷卡</div>
     <table class="cc-report-table">
-      <thead><tr><th>月份</th><th>金額</th><th>筆數</th></tr></thead>
+      <thead><tr><th>月份</th><th>實刷</th><th>我的支出</th><th>筆數</th></tr></thead>
       <tbody>${byMonth.length
-        ?byMonth.map(x=>`<tr><td>${formatMonthLabel(x.label)}</td><td class="clr-expense">${fmt(x.amount)}</td><td>${fmt(x.count)}</td></tr>`).join('')
-        :`<tr><td colspan="3" class="cc-report-empty">沒有信用卡刷卡資料</td></tr>`}</tbody>
+        ?byMonth.map(x=>`<tr><td>${formatMonthLabel(x.label)}</td><td>${fmt(x.amount)}</td><td class="clr-expense">${fmt(ownByMonth[x.label]||0)}</td><td>${fmt(x.count)}</td></tr>`).join('')
+        :`<tr><td colspan="4" class="cc-report-empty">沒有信用卡刷卡資料</td></tr>`}</tbody>
     </table>`;
 }
 function renderCreditCardMainTable(rows,total){
-  const data=sumCreditCardRows(rows,r=>r.main||'未分類');
+  const data=sumCreditCardRows(rows,r=>r.main||'未分類',r=>r.ownAmount);
   return `<table class="cc-report-table">
     <thead><tr><th>主類別</th><th>金額</th><th>占比</th><th>筆數</th></tr></thead>
     <tbody>${data.length
@@ -3287,6 +3525,7 @@ function renderCreditCardDetailTable(rows,idx){
           <div class="cc-report-detail-cats"><span>${escHtml(r.main||'')}</span><span class="cc-report-detail-sub">${escHtml(r.sub||'')}</span></div>
           <div class="cc-report-detail-amount clr-expense">${fmt(Math.abs(r.amount))}</div>
         </div>
+        ${r.advanceFor?`<div class="cc-report-detail-extra">代墊 ${htmlEsc(r.advanceFor)}</div>`:typeof r.split==='number'?`<div class="cc-report-detail-extra">${r.ownAmount?`我的支出 $${fmt(r.ownAmount)} · `:''}女友分攤${r.pendingAmount?` · 待收回 $${fmt(r.pendingAmount)}`:''}</div>`:''}
         ${r.note?`<div class="cc-report-detail-note">${escHtml(r.note)}</div>`:''}
       </div>`).join('')
       :`<div class="cc-report-empty">沒有信用卡刷卡資料</div>`}</div>
@@ -3655,7 +3894,7 @@ function calcMonthlyBalanceDetail(data, prefix){
   const moRecs=data.filter(r=>r.date.startsWith(prefix));
   const moB=loadMonthBudget(prefix);
   // 收入
-  const income=moRecs.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
+  const income=moRecs.filter(r=>r.type==='收入'&&!r.advanceRepaymentFor).reduce((s,r)=>s+r.amount,0);
   // 浮動支出：CC 分期依 billedDate 決定是否扣除，其餘正常計算
   const floatRecs=moRecs.filter(r=>floatCatKeys.includes(r.main));
   // 加上所有月份中屬於本月應攤的 CC 分期（billedDate 在本月或以前且尚未還清）
@@ -3777,10 +4016,10 @@ function renderStats(){
   document.getElementById('stat-month-label').textContent=`${statYear} 年 ${statMonth} 月`;
   const md=data.filter(r=>r.date.startsWith(prefix));
   const exp=md.filter(r=>r.amount<0);
-  const inc=md.filter(r=>r.amount>0&&r.type==='收入');
+  const inc=md.filter(r=>r.amount>0&&r.type==='收入'&&!r.advanceRepaymentFor);
   const totalExp=exp.reduce((s,r)=>s+r.amount,0);
   const totalInc=inc.reduce((s,r)=>s+r.amount,0);
-  const vicExp=exp.reduce((s,r)=>s+vicShare(r.amount,r.split),0);
+  const vicExp=exp.reduce((s,r)=>s+(r.advanceFor?0:vicShare(r.amount,r.split)),0);
   document.getElementById('s-expense').textContent=fmt(Math.abs(totalExp));
   document.getElementById('s-income').textContent=fmt(totalInc);
   document.getElementById('s-vic-expense').textContent=fmt(Math.abs(vicExp));
@@ -4105,7 +4344,7 @@ function renderIncomeSection(data, prefix){
   const incCats=loadIncome();
   let total=0;
   const rows=incCats.map(cat=>{
-    const recs=data.filter(r=>r.date.startsWith(prefix)&&r.type==='收入'&&r.main===cat);
+    const recs=data.filter(r=>r.date.startsWith(prefix)&&r.type==='收入'&&r.main===cat&&!r.advanceRepaymentFor);
     const amt=recs.reduce((s,r)=>s+r.amount,0);
     if(amt) total+=amt;
     const lastDate=recs.length?recs.sort((a,b)=>b.date.localeCompare(a.date))[0].date.slice(5).replace('-','/'):''
@@ -5030,8 +5269,13 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.98';
+const APP_VERSION='2.99';
 const CHANGELOG=[
+  {version:'2.99',date:'2026-10-15',items:[
+    '記錄頁可勾選不連續的記帳並加總金額',
+    '代墊支出與收款可在新增或編輯時連結，信用卡報表區分實刷、我的支出與待收回款項',
+    '報表月份列會自動顯示目前選取的月份',
+  ]},
   {version:'2.98',date:'2026-10-13',items:[
     '開啟 App 時先顯示載入狀態，確認帳號後立即進入記帳畫面，雲端同步繼續進行',
     '新增與編輯記帳的日期旁加入「今天」按鈕，可一鍵帶入當天日期',
