@@ -36,6 +36,10 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .card{background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .form-group{margin-bottom:14px}
 .form-label{font-size:12px;color:#6B7280;margin-bottom:5px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.advance-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.advance-label-row .form-label{margin-bottom:0}
+.advance-toggle{padding:3px 9px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer}
+.advance-toggle.active{border-color:var(--primary);background:var(--primary-tint);color:var(--primary)}
 .form-control{width:100%;padding:11px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;background:#fff;color:#1A1A2E;appearance:none;-webkit-appearance:none}
 .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s12)}
 .date-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
@@ -678,8 +682,21 @@ input[type=number]{-moz-appearance:textfield}
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">備註</label>
+          <div class="advance-label-row">
+            <label class="form-label" for="f-note">備註</label>
+            <button type="button" class="advance-toggle" id="f-advance-toggle" aria-controls="f-advance-fields" aria-expanded="false" onclick="toggleAdvanceFields('f')">代墊 ▾</button>
+          </div>
           <input type="text" enterkeyhint="done" form="add-form" class="form-control" id="f-note" placeholder="選填">
+        </div>
+        <div id="f-advance-fields" hidden>
+          <div class="form-group" id="f-advance-for-wrap">
+            <label class="form-label" for="f-advance-for">代墊對象（支出時選填）</label>
+            <input type="text" form="add-form" class="form-control" id="f-advance-for" maxlength="30" placeholder="例如：父母">
+          </div>
+          <div class="form-group" id="f-advance-repayment-wrap">
+            <label class="form-label" for="f-advance-repayment-for">對應代墊（收款時選填）</label>
+            <select form="add-form" class="form-control" id="f-advance-repayment-for"></select>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">女友分攤</label>
@@ -696,14 +713,6 @@ input[type=number]{-moz-appearance:textfield}
             <span style="font-size:13px;color:#6B7280">%</span>
           </div>
           <div class="share-preview" id="share-preview"></div>
-        </div>
-        <div class="form-group" id="f-advance-for-wrap">
-          <label class="form-label" for="f-advance-for">代墊對象（支出時選填）</label>
-          <input type="text" form="add-form" class="form-control" id="f-advance-for" maxlength="30" placeholder="例如：父母">
-        </div>
-        <div class="form-group" id="f-advance-repayment-wrap">
-          <label class="form-label" for="f-advance-repayment-for">對應代墊（收款時選填）</label>
-          <select form="add-form" class="form-control" id="f-advance-repayment-for"></select>
         </div>
         <button class="btn-submit" id="btn-add-submit">➕ 新增記帳</button>
       </div>
@@ -1208,8 +1217,21 @@ input[type=number]{-moz-appearance:textfield}
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">備註</label>
+      <div class="advance-label-row">
+        <label class="form-label" for="e-note">備註</label>
+        <button type="button" class="advance-toggle" id="e-advance-toggle" aria-controls="e-advance-fields" aria-expanded="false" onclick="toggleAdvanceFields('e')">代墊 ▾</button>
+      </div>
       <input type="text" class="form-control" id="e-note">
+    </div>
+    <div id="e-advance-fields" hidden>
+      <div class="form-group" id="e-advance-for-wrap">
+        <label class="form-label" for="e-advance-for">代墊對象（支出時選填）</label>
+        <input type="text" class="form-control" id="e-advance-for" maxlength="30" placeholder="例如：父母">
+      </div>
+      <div class="form-group" id="e-advance-repayment-wrap">
+        <label class="form-label" for="e-advance-repayment-for">對應代墊（收款時選填）</label>
+        <select class="form-control" id="e-advance-repayment-for"></select>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">女友分攤</label>
@@ -1225,14 +1247,6 @@ input[type=number]{-moz-appearance:textfield}
         <input type="number" class="form-control" id="e-custom-pct" placeholder="0~100" min="0" max="100" step="1" style="width:80px" oninput="editCustomPctChanged()">
         <span style="font-size:13px;color:#6B7280">%</span>
       </div>
-    </div>
-    <div class="form-group" id="e-advance-for-wrap" style="display:none">
-      <label class="form-label" for="e-advance-for">代墊對象（選填）</label>
-      <input type="text" class="form-control" id="e-advance-for" maxlength="30" placeholder="例如：父母">
-    </div>
-    <div class="form-group" id="e-advance-repayment-wrap" style="display:none">
-      <label class="form-label" for="e-advance-repayment-for">對應代墊（選填）</label>
-      <select class="form-control" id="e-advance-repayment-for"></select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="btn-delete">🗑 刪除</button>
@@ -1567,18 +1581,22 @@ function advanceReceiptError(receipt,target,data){
   if(receipt.amount>Math.abs(target.amount)-otherPaid) return '收款金額超過這筆代墊的待收回金額';
   return '';
 }
+function setAdvanceFieldsExpanded(prefix,expanded){
+  document.getElementById(`${prefix}-advance-fields`).hidden=!expanded;
+  const button=document.getElementById(`${prefix}-advance-toggle`);
+  button.classList.toggle('active',expanded);
+  button.setAttribute('aria-expanded',String(expanded));
+  button.textContent=expanded?'代墊 ▴':'代墊 ▾';
+}
+function toggleAdvanceFields(prefix){
+  const fields=document.getElementById(`${prefix}-advance-fields`);
+  setAdvanceFieldsExpanded(prefix,fields.hidden);
+}
 function updateAdvanceFields(prefix,recordId=null,initialLink){
   const data=loadRecords();
-  const amount=parseAmt(document.getElementById(`${prefix}-amount`).value);
-  const type=document.getElementById(`${prefix}-type`).value;
-  const method=document.getElementById(`${prefix}-method`).value;
   const date=document.getElementById(`${prefix}-date`).value;
-  const split=prefix==='f'?addSplit:editSplit;
-  const forEl=document.getElementById(`${prefix}-advance-for`);
   const linkEl=document.getElementById(`${prefix}-advance-repayment-for`);
   const selected=initialLink===undefined?linkEl.value:initialLink;
-  document.getElementById(`${prefix}-advance-for-wrap`).style.display=prefix==='f'||(amount<0&&['費用','成本'].includes(type)&&split===null)||forEl.value?'block':'none';
-  document.getElementById(`${prefix}-advance-repayment-wrap`).style.display=prefix==='f'||(amount>0&&split!=='repay'&&!isCCMethod(method))||selected?'block':'none';
   linkEl.replaceChildren();
   const blank=document.createElement('option'); blank.value=''; blank.textContent='不連結代墊'; linkEl.appendChild(blank);
   const targets=data.filter(r=>r.advanceFor&&r.amount<0&&r.id!==recordId&&r.date<=date&&(advanceRemaining(r,data)>0||r.id===selected))
@@ -2553,6 +2571,7 @@ function resetAddForm(lastRec=null){
   document.getElementById('share-preview').classList.remove('show');
   updateInstallPreview();
   updateAdvanceFields('f');
+  setAdvanceFieldsExpanded('f',false);
 }
 
 // ─── Records ───────────────────────────────────────────────────────────────
@@ -3028,6 +3047,7 @@ function openEdit(id){
     document.getElementById('e-custom-pct').value=Math.round((1-r.split)*100);
   } else { eWrap.style.display='none'; }
   updateAdvanceFields('e',id,r.advanceRepaymentFor||'');
+  setAdvanceFieldsExpanded('e',Boolean(r.advanceFor||r.advanceRepaymentFor));
   document.getElementById('edit-overlay').classList.add('open');
 }
 
@@ -5269,8 +5289,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.99';
+const APP_VERSION='2.100';
 const CHANGELOG=[
+  {version:'2.100',date:'2026-10-18',items:[
+    '代墊欄位收進備註旁的按鈕，需要時再展開',
+  ]},
   {version:'2.99',date:'2026-10-15',items:[
     '記錄頁可勾選不連續的記帳並加總金額',
     '代墊支出與收款可在新增或編輯時連結，信用卡報表區分實刷、我的支出與待收回款項',
