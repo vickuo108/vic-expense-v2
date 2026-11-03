@@ -1435,7 +1435,8 @@ function saveMonthlyBudgets(o){ save(KEY_MONTHLY_BUDGETS,o); }
 function loadMonthBudget(ym){ return loadMonthlyBudgets()[ym]||{}; }
 function loanBudgetValue(moB, loanName){
   const key='loan:'+loanName;
-  return moB[key]!==undefined?moB[key]:moB.loan||0;
+  if(moB[key]!==undefined) return moB[key];
+  return loadLoans()[0]?.name===loanName?moB.loan||0:0;
 }
 function loanBudgetTotal(moB){
   const loans=loadLoans();
@@ -2296,7 +2297,7 @@ function applyLoanDefaults(fillAmount=false){
   const loanName=document.getElementById('f-sub').value;
   if(fillAmount&&loanName){
     const budget=loanBudgetValue(loadMonthBudget(ym),loanName);
-    if(budget) amtEl.value=fmtInput(-Math.abs(budget));
+    amtEl.value=budget?fmtInput(-Math.abs(budget)):'-';
   }
   if(!lpEl.value) lpEl.value='-';
   calcLoanInterest('f');
@@ -5299,8 +5300,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.101';
+const APP_VERSION='2.102';
 const CHANGELOG=[
+  {version:'2.102',date:'2026-11-03',items:[
+    '新增貸款依該貸款月報表預估帶入金額，預估為零時不沿用其他貸款金額',
+  ]},
   {version:'2.101',date:'2026-10-29',items:[
     '信用卡報表切換頁面後保留卡片明細的展開狀態',
   ]},
