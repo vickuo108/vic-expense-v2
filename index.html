@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#3B5BDB">
+<meta name="theme-color" content="#2F6F6B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Vic記帳">
@@ -12,14 +12,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
-  --primary:#3B5BDB;--primary-light:#5C7CFA;--primary-darker:#1A56DB;
-  --primary-tint:#EEF2FF;--primary-deep:#3730A3;--primary-border:#C7D2FE;
-  --primary-s12:rgba(59,91,219,.12);--primary-s20:rgba(59,91,219,.20);
-  --primary-s25:rgba(59,91,219,.25);--primary-s35:rgba(59,91,219,.35);
+  --primary:#2F6F6B;--primary-light:#2F6F6B;--primary-darker:#2F6F6B;
+  --primary-tint:#E3EBE5;--primary-deep:#293331;--primary-border:#E3EBE5;
+  --primary-s12:rgba(47,111,107,.12);--primary-s20:rgba(47,111,107,.20);
+  --primary-s25:rgba(47,111,107,.25);--primary-s35:rgba(47,111,107,.35);
+  --app-bg:#F7F4EE;--app-ink:#293331;--app-accent:#DDA378;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC',sans-serif;background:#F0F2F5;color:#1A1A2E}
-.app{display:flex;flex-direction:column;height:100dvh;min-height:-webkit-fill-available;max-width:480px;margin:0 auto;position:relative;background:#F0F2F5;padding-top:env(safe-area-inset-top)}
+html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC',sans-serif;background:var(--app-bg);color:var(--app-ink)}
+.app{display:flex;flex-direction:column;height:100dvh;min-height:-webkit-fill-available;max-width:480px;margin:0 auto;position:relative;background:var(--app-bg);padding-top:env(safe-area-inset-top)}
 .header{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-title{font-size:18px;font-weight:700;letter-spacing:.5px}
 .header-sub{font-size:12px;opacity:.8;margin-top:1px}
@@ -40,12 +41,27 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .advance-label-row .form-label{margin-bottom:0}
 .advance-toggle{padding:3px 9px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer}
 .advance-toggle.active{border-color:var(--primary);background:var(--primary-tint);color:var(--primary)}
-.form-control{width:100%;padding:11px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;background:#fff;color:#1A1A2E;appearance:none;-webkit-appearance:none}
+.form-control{width:100%;padding:11px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;background:#fff;color:var(--app-ink);appearance:none;-webkit-appearance:none}
 .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s12)}
 .date-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.date-today-btn{min-width:58px;padding:0 12px;border:1.5px solid var(--primary-border);border-radius:10px;background:var(--primary-tint);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer}
+.date-today-btn{min-width:58px;padding:0 12px;border:1.5px solid var(--app-accent);border-radius:10px;background:var(--primary-tint);color:var(--primary);font-size:13px;font-weight:700;cursor:pointer}
 .date-today-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bundle-toggle{border:1px solid var(--primary-border);border-radius:7px;background:var(--primary-tint);color:var(--primary);padding:4px 9px;font-size:12px;font-weight:700;cursor:pointer}
+.bundle-toggle.active{background:var(--primary);color:#fff}
+.bundle-fields[hidden]{display:none}
+.bundle-line{border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-bottom:9px;background:#fff}
+.bundle-line-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--app-ink)}
+.bundle-line-remove{border:0;background:none;color:#DC2626;font-size:12px;cursor:pointer}
+.bundle-line .form-group{margin-bottom:9px}
+.bundle-line .form-group:last-child{margin-bottom:0}
+.bundle-line select,.bundle-line input{min-width:0}
+.bundle-add{width:100%;padding:9px;border:1px dashed var(--primary);border-radius:8px;background:var(--primary-tint);color:var(--primary);font-weight:700;cursor:pointer;margin-bottom:12px}
+.bundle-reconcile{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 2px;font-size:13px;color:var(--app-ink)}
+.bundle-reconcile strong{font-size:15px}
+.bundle-reconcile-status{color:#A16207;font-weight:700;text-align:right}
+.bundle-reconcile-status.matched{color:var(--primary)}
+.tx-note.tx-bundle-summary{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45}
 .amount-wrap{position:relative}
 .amount-currency{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9BA3AF;font-size:15px;pointer-events:none}
 .amount-wrap .form-control{padding-left:28px}
@@ -60,7 +76,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .split-opt[data-v="0"].active{background:#FFF1F2;border-color:#F43F5E;color:#BE123C}
 .split-opt[data-v="repay"].active{background:#DCFCE7;border-color:#16A34A;color:#15803D}
 .split-opt[data-v="custom"].active{background:#F5F3FF;border-color:#7C3AED;color:#7C3AED}
-.share-preview{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 13px;font-size:13px;color:#1D4ED8;margin-top:8px;display:none}
+.share-preview{background:var(--primary-tint);border:1px solid var(--primary-border);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--primary-deep);margin-top:8px;display:none}
 .share-preview.show{display:block}
 .install-preview{background:#F5F3FF;border-color:#DDD6FE;color:#6D28D9;line-height:1.6}
 .install-preview-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -68,7 +84,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;box-shadow:0 4px 12px var(--primary-s35)}
 .btn-submit:active{transform:scale(.98)}
 .search-row{display:flex;gap:8px;margin-bottom:10px}
-.records-sticky-top{position:sticky;top:0;z-index:80;background:#F0F2F5;margin:0 -12px 10px;padding:0 12px 6px}
+.records-sticky-top{position:sticky;top:0;z-index:80;background:var(--app-bg);margin:0 -12px 10px;padding:0 12px 6px}
 .search-input{flex:1;min-width:0;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff}
 .search-input:focus{outline:none;border-color:var(--primary)}
 .filter-toggle{padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;white-space:nowrap;color:#6B7280}
@@ -85,7 +101,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .filter-row:last-child{margin-bottom:0}
 .filter-select{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;background:#fff;appearance:none;-webkit-appearance:none}
-.filter-multi-btn{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;background:#fff;color:#1A1A2E;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-multi-btn{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;background:#fff;color:var(--app-ink);text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .filter-multi-btn.has-values{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
 .filter-card:not(.multi-mode) .filter-multi-btn{display:none}
 .filter-card.multi-mode .filter-single-select{display:none}
@@ -114,7 +130,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cst-amt{text-align:right;min-width:60px;font-variant-numeric:tabular-nums}
 .cst-vic{color:#3B82F6}
 .cst-gf{color:#EC4899}
-.date-month-label{font-size:14px;color:#1A1A2E;font-weight:800;padding:18px 4px 8px;margin-top:6px;border-bottom:1px solid #D1D5DB;letter-spacing:.3px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.date-month-label{font-size:14px;color:var(--app-ink);font-weight:800;padding:18px 4px 8px;margin-top:6px;border-bottom:1px solid #D1D5DB;letter-spacing:.3px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .date-month-summary{font-size:11px;color:#6B7280;font-weight:600;letter-spacing:0;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .date-group-label{font-size:11px;color:#9BA3AF;font-weight:600;padding:10px 4px 4px;letter-spacing:.5px}
 .date-year-label{font-size:13px;color:#6B7280;font-weight:700;padding:16px 4px 2px;letter-spacing:.5px}
@@ -134,7 +150,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .tx-body{flex:1;min-width:0;margin:0 10px}
-.tx-main{font-size:14px;font-weight:700;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-main{font-size:14px;font-weight:700;color:var(--app-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-note{font-size:11px;color:#9CA3AF;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-meta{font-size:11px;color:#9BA3AF;margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .tx-right{text-align:right;flex-shrink:0}
@@ -175,7 +191,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .mobal-sheet-overlay.open{display:flex}
 .mobal-sheet{background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));width:100%;box-sizing:border-box;max-height:80vh;overflow-y:auto}
 .mobal-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
-.mobal-sheet-title{font-size:16px;font-weight:700;color:#1A1A2E;line-height:1.4}
+.mobal-sheet-title{font-size:16px;font-weight:700;color:var(--app-ink);line-height:1.4}
 .mobal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6;font-size:14px}
 .mobal-row:last-child{border-bottom:none}
 .mobal-row-label{color:#374151}
@@ -211,11 +227,11 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .gf-due-summary-val{color:#DC2626;font-weight:800;white-space:nowrap}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;background:#fff;border-radius:12px;padding:4px 10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .month-nav-btn{background:none;border:1.5px solid #E5E7EB;border-radius:8px;padding:2px 9px;cursor:pointer;font-size:15px;color:#374151}
-.month-label{font-size:16px;font-weight:800;color:#1A1A2E}
+.month-label{font-size:16px;font-weight:800;color:var(--app-ink)}
 .month-label-btn{border:none;background:transparent;padding:5px 12px;border-radius:10px;cursor:pointer}
-.month-label-btn:active{background:#EEF2FF}
+.month-label-btn:active{background:var(--primary-tint)}
 .stat-month-select-row{display:flex;gap:10px;align-items:center;margin-bottom:14px}
-.stat-month-year{flex:1;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 12px;font-size:16px;font-weight:700;color:#1A1A2E;background:#fff}
+.stat-month-year{flex:1;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 12px;font-size:16px;font-weight:700;color:var(--app-ink);background:#fff}
 .stat-month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .stat-month-option{border:1.5px solid #E5E7EB;border-radius:10px;background:#fff;padding:10px 0;font-size:14px;font-weight:700;color:#374151;cursor:pointer}
 .stat-month-option.active{border-color:var(--primary);background:var(--primary-tint);color:var(--primary)}
@@ -240,7 +256,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .report-table tbody tr:not(.rep-grp):not(.rep-tot):not(.rep-net) td{background:#F8FAFC}
 .report-table .rep-tot td{background:#fff;font-weight:700;border-top:1.5px solid #D1D5DB}
 .report-table .rep-tot td:first-child{background:#fff}
-.report-table .rep-net td{background:#EFF6FF;font-weight:700;color:#1D4ED8;border-top:2px solid #BFDBFE}
+.report-table .rep-net td{background:var(--primary-tint);font-weight:700;color:var(--primary-deep);border-top:2px solid var(--primary-border)}
 .rep-view-toggle{display:flex;gap:6px;margin-bottom:0}
 #panel-report.active{display:flex!important;flex-direction:column}
 #rep-view-year,#rep-view-qm,#rep-view-cc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0}
@@ -248,7 +264,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .rep-view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .rep-action-row{display:flex;gap:8px;align-items:center;margin:8px 0 4px;flex-wrap:wrap}
 .cc-report-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.cc-report-select{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;color:#1A1A2E}
+.cc-report-select{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;color:var(--app-ink)}
 .cc-report-card-nav{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;margin-bottom:10px}
 .cc-report-card-nav::-webkit-scrollbar{display:none}
 .cc-report-card-btn{flex-shrink:0;padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:999px;background:#fff;font-size:12px;font-weight:700;color:#374151;cursor:pointer}
@@ -256,10 +272,10 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-report-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
 .cc-report-box{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .cc-report-box-label{font-size:11px;color:#9BA3AF;font-weight:700;margin-bottom:4px}
-.cc-report-box-val{font-size:17px;font-weight:800;color:#1A1A2E}
+.cc-report-box-val{font-size:17px;font-weight:800;color:var(--app-ink)}
 .cc-report-section{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .cc-report-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:8px}
-.cc-report-title{font-size:14px;font-weight:800;color:#1A1A2E;margin-bottom:8px}
+.cc-report-title{font-size:14px;font-weight:800;color:var(--app-ink);margin-bottom:8px}
 .cc-report-card-head>div:first-child{min-width:0}
 .cc-report-card-meta{font-size:11px;color:#9BA3AF;text-align:right;max-width:58%;flex-shrink:0;overflow-wrap:anywhere}
 .cc-report-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -273,7 +289,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-report-detail-item{padding:8px 0;border-bottom:1px solid #F3F4F6}
 .cc-report-detail-main{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center}
 .cc-report-detail-date{font-size:12px;font-weight:700;color:#374151;white-space:nowrap}
-.cc-report-detail-cats{min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;font-weight:700;color:#1A1A2E}
+.cc-report-detail-cats{min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;font-weight:700;color:var(--app-ink)}
 .cc-report-detail-sub{color:#6B7280;font-weight:700}
 .cc-report-detail-amount{font-size:12px;font-weight:700;white-space:nowrap;text-align:right}
 .cc-report-detail-note{margin-top:4px;padding-left:52px;color:#6B7280;font-size:12px;line-height:1.45;white-space:normal;word-break:break-word}
@@ -290,8 +306,8 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .qm-table tbody td:nth-child(7),.qm-table tbody td:nth-child(12),.qm-table tbody td:nth-child(17){border-left:2px solid #E5E7EB}
 .qm-table .qm-q td{background:#F1F5F9;font-weight:700;border-top:1.5px solid #CBD5E1}
 .qm-table .qm-q td:first-child{background:#F1F5F9}
-.qm-table .qm-total td{background:#EFF6FF;font-weight:700;border-top:2px solid #BFDBFE;color:#1D4ED8}
-.qm-table .qm-total td:first-child{background:#EFF6FF}
+.qm-table .qm-total td{background:var(--primary-tint);font-weight:700;border-top:2px solid var(--primary-border);color:var(--primary-deep)}
+.qm-table .qm-total td:first-child{background:var(--primary-tint)}
 
 /* Settings */
 .settings-section-title{font-size:12px;color:#9BA3AF;font-weight:700;letter-spacing:.5px;padding:14px 4px 6px;text-transform:uppercase}
@@ -374,17 +390,17 @@ input[type=number]{-moz-appearance:textfield}
 .stats-row3{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
 .stats-row3 .stat-box{padding:10px 8px}
 .stats-row3 .stat-box-val{font-size:14px;font-weight:800}
-.fin-plan-total{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#EFF6FF;border-bottom:2px solid #BFDBFE;font-weight:700;color:#1D4ED8;font-size:14px}
+.fin-plan-total{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--primary-tint);border-bottom:2px solid var(--primary-border);font-weight:700;color:var(--primary-deep);font-size:14px}
 #rep-month-selector::-webkit-scrollbar{display:none}
 .back-top-btn{background:none;border:1.5px solid #E5E7EB;border-radius:6px;padding:2px 8px;font-size:11px;color:#9BA3AF;cursor:pointer;flex-shrink:0;line-height:1.4}
 .back-top-btn:active{background:#F3F4F6}
 .stats-quicknav{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .stats-quicknav::-webkit-scrollbar{display:none}
-.stats-sticky-top,.settings-sticky-top{position:sticky;top:0;z-index:80;background:#F0F2F5;margin-left:-12px;margin-right:-12px}
+.stats-sticky-top,.settings-sticky-top{position:sticky;top:0;z-index:80;background:var(--app-bg);margin-left:-12px;margin-right:-12px}
 .stats-sticky-top{margin-top:0;margin-bottom:8px;padding:0 12px 2px}
 .settings-sticky-top{margin-top:-12px;margin-bottom:4px;padding:12px 12px 10px}
 .records-sticky-top,.stats-sticky-top,.settings-sticky-top{isolation:isolate}
-.records-sticky-top::before,.stats-sticky-top::before,.settings-sticky-top::before{content:"";position:absolute;left:0;right:0;top:-120px;bottom:0;background:#F0F2F5;z-index:0;pointer-events:none}
+.records-sticky-top::before,.stats-sticky-top::before,.settings-sticky-top::before{content:"";position:absolute;left:0;right:0;top:-120px;bottom:0;background:var(--app-bg);z-index:0;pointer-events:none}
 .records-sticky-top > *,.stats-sticky-top > *,.settings-sticky-top > *{position:relative;z-index:1}
 .stats-qnav-btn{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;white-space:nowrap;color:#374151;font-weight:500}
 .stats-qnav-btn:active{background:var(--primary-tint);border-color:var(--primary);color:var(--primary)}
@@ -393,13 +409,13 @@ input[type=number]{-moz-appearance:textfield}
 .update-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:linear-gradient(135deg,var(--primary-darker),var(--primary));color:#fff;z-index:800;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
 .update-banner.show{display:flex}
 .update-banner-btn{background:#fff;color:var(--primary-darker);border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.glossary-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:600;display:none;flex-direction:column}
+.glossary-overlay{position:fixed;inset:0;background:var(--app-bg);z-index:600;display:none;flex-direction:column}
 .glossary-overlay.open{display:flex}
 .glossary-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;flex-shrink:0}
 .glossary-close-btn{background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 .glossary-body{flex:1;overflow-y:auto;padding:12px 12px 32px;-webkit-overflow-scrolling:touch}
 .glossary-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-.glossary-term{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.glossary-term{font-size:16px;font-weight:700;color:var(--app-ink);margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .glossary-def{font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;cursor:pointer}
 .glossary-def.collapsed{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;cursor:pointer}
 .glossary-actions{display:flex;gap:5px;flex-shrink:0}
@@ -407,7 +423,7 @@ input[type=number]{-moz-appearance:textfield}
 .glossary-del-btn{background:#FFF1F2;border:none;border-radius:6px;padding:4px 8px;font-size:12px;color:#EF4444;cursor:pointer}
 .glossary-toggle{font-size:10px;color:#9BA3AF;cursor:pointer;margin-top:4px;display:block;text-align:right}
 /* ── 登入畫面 ── */
-#login-overlay{position:fixed;inset:0;background:#1A1A2E;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
+#login-overlay{position:fixed;inset:0;background:var(--app-ink);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
 #login-overlay.loading .login-card{display:none}
 .login-loading{display:none;flex-direction:column;align-items:center;gap:10px;color:#fff;font-size:15px;font-weight:600}
 #login-overlay.loading .login-loading{display:flex}
@@ -416,7 +432,7 @@ input[type=number]{-moz-appearance:textfield}
 @keyframes login-spin{to{transform:rotate(360deg)}}
 .login-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-logo{font-size:40px;text-align:center;margin-bottom:6px}
-.login-title{font-size:20px;font-weight:700;text-align:center;color:#1A1A2E;margin-bottom:4px}
+.login-title{font-size:20px;font-weight:700;text-align:center;color:var(--app-ink);margin-bottom:4px}
 .login-sub{font-size:13px;color:#9BA3AF;text-align:center;margin-bottom:24px}
 .login-input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;box-sizing:border-box;margin-bottom:12px;outline:none;-webkit-appearance:none}
 .login-input:focus{border-color:var(--primary)}
@@ -432,14 +448,14 @@ input[type=number]{-moz-appearance:textfield}
 .input-dialog.open{display:flex}
 .input-dialog-card{background:#fff;border-radius:16px;width:100%;max-width:360px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .input-dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
-.input-dialog-title{font-size:18px;font-weight:700;color:#1A1A2E;line-height:1.4;padding-top:2px}
+.input-dialog-title{font-size:18px;font-weight:700;color:var(--app-ink);line-height:1.4;padding-top:2px}
 .input-dialog-field{width:100%;box-sizing:border-box;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px 14px;font-size:16px;outline:none;margin-bottom:16px;-webkit-appearance:none}
 .input-dialog-field:focus{border-color:var(--primary)}
 .input-dialog-actions{display:flex;justify-content:flex-end;gap:10px}
 .input-dialog-cancel,.input-dialog-confirm{border:none;background:transparent;font-size:15px;font-weight:700;padding:8px 10px;cursor:pointer;color:var(--primary)}
 .input-dialog-cancel{color:#6B7280}
 .backup-range-options{display:grid;gap:8px}
-.backup-range-option{border:1.5px solid #E5E7EB;border-radius:12px;background:#fff;padding:12px 14px;text-align:left;font-size:14px;font-weight:700;color:#1A1A2E;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.backup-range-option{border:1.5px solid #E5E7EB;border-radius:12px;background:#fff;padding:12px 14px;text-align:left;font-size:14px;font-weight:700;color:var(--app-ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 .backup-range-option.active{border-color:var(--primary);background:var(--primary-tint);color:var(--primary)}
 .backup-range-count{font-size:12px;color:#9BA3AF;font-weight:600;margin-left:10px}
 .backup-range-option.active .backup-range-count{color:var(--primary)}
@@ -633,7 +649,7 @@ input[type=number]{-moz-appearance:textfield}
             <select class="form-control" id="f-method"></select>
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="f-single-category">
           <div class="form-group">
             <label class="form-label">主類別</label>
             <select class="form-control" id="f-main"></select>
@@ -644,7 +660,7 @@ input[type=number]{-moz-appearance:textfield}
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">金額（負數=支出）</label>
+          <div class="advance-label-row"><label class="form-label" id="f-amount-label" for="f-amount">金額（負數=支出）</label><button type="button" class="bundle-toggle" id="f-bundle-toggle" onclick="toggleBundle('f')">拆帳</button></div>
           <div class="form-row" style="align-items:center">
             <div class="amount-wrap">
               <span class="amount-currency">$</span>
@@ -662,6 +678,7 @@ input[type=number]{-moz-appearance:textfield}
           </div>
           <div class="share-preview install-preview" id="install-preview"></div>
         </div>
+        <div class="bundle-fields" id="f-bundle-fields" hidden><div id="f-bundle-lines"></div><button type="button" class="bundle-add" onclick="addBundleLine('f')">＋ 新增項目</button><div class="bundle-reconcile" aria-live="polite"><span>項目加總 <strong id="f-bundle-sum">-$0</strong></span><span class="bundle-reconcile-status" id="f-bundle-status"></span></div></div>
         <!-- 貸款額外欄位 -->
         <div id="f-loan-extra" style="display:none">
           <div class="form-row">
@@ -698,7 +715,7 @@ input[type=number]{-moz-appearance:textfield}
             <select form="add-form" class="form-control" id="f-advance-repayment-for"></select>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="f-single-share">
           <label class="form-label">女友分攤</label>
           <div class="split-grid">
             <button class="split-opt active" data-v="null" onmousedown="event.preventDefault()">👤 我全部</button>
@@ -1011,7 +1028,7 @@ input[type=number]{-moz-appearance:textfield}
         <span class="s-arrow">›</span>
       </button>
       <button class="settings-btn" onclick="importJSON()">
-        <div class="s-icon" style="background:#EFF6FF">📥</div>
+        <div class="s-icon" style="background:var(--primary-tint)">📥</div>
         <div class="s-text"><div class="s-title">匯入 JSON 備份</div><div class="s-desc">從備份檔還原資料</div></div>
         <span class="s-arrow">›</span>
       </button>
@@ -1040,7 +1057,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="card" style="padding:14px;margin-bottom:8px">
         <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:var(--primary)"></span></div>
         <div style="display:flex;gap:8px">
-          <button onclick="manualSync()" style="flex:1;padding:10px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;color:#1D4ED8;cursor:pointer;font-weight:600">☁️ 立即同步</button>
+          <button onclick="manualSync()" style="flex:1;padding:10px;background:var(--primary-tint);border:1.5px solid var(--primary-border);border-radius:8px;font-size:13px;color:var(--primary-deep);cursor:pointer;font-weight:600">☁️ 立即同步</button>
           <button onclick="doLogout()" style="flex:1;padding:10px;background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:8px;font-size:13px;color:#EF4444;cursor:pointer;font-weight:600">登出</button>
         </div>
       </div>
@@ -1050,7 +1067,7 @@ input[type=number]{-moz-appearance:textfield}
 
     <!-- ── 財務報表 Panel ── -->
     <div class="panel" id="panel-report">
-      <div id="rep-sticky-controls" style="position:sticky;top:0;z-index:10;background:#F0F2F5;padding-bottom:2px">
+      <div id="rep-sticky-controls" style="position:sticky;top:0;z-index:10;background:var(--app-bg);padding-bottom:2px">
         <div class="month-nav">
           <button class="month-nav-btn" id="rep-prev">‹</button>
           <span class="month-label" id="rep-year-label"></span>
@@ -1169,7 +1186,7 @@ input[type=number]{-moz-appearance:textfield}
         <select class="form-control" id="e-method"></select>
       </div>
     </div>
-    <div class="form-row">
+    <div class="form-row" id="e-single-category">
       <div class="form-group">
         <label class="form-label">主類別</label>
         <select class="form-control" id="e-main"></select>
@@ -1180,12 +1197,13 @@ input[type=number]{-moz-appearance:textfield}
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">金額</label>
+      <div class="advance-label-row"><label class="form-label" id="e-amount-label" for="e-amount">金額</label><button type="button" class="bundle-toggle" id="e-bundle-toggle" onclick="toggleBundle('e')">拆帳</button></div>
       <div class="amount-wrap">
         <span class="amount-currency">$</span>
         <input type="text" inputmode="decimal" class="form-control" id="e-amount">
       </div>
     </div>
+    <div class="bundle-fields" id="e-bundle-fields" hidden><div id="e-bundle-lines"></div><button type="button" class="bundle-add" onclick="addBundleLine('e')">＋ 新增項目</button><div class="bundle-reconcile" aria-live="polite"><span>項目加總 <strong id="e-bundle-sum">-$0</strong></span><span class="bundle-reconcile-status" id="e-bundle-status"></span></div></div>
     <div id="e-install-extra" style="display:none">
       <div class="form-group">
         <label class="form-label">是否分期</label>
@@ -1233,7 +1251,7 @@ input[type=number]{-moz-appearance:textfield}
         <select class="form-control" id="e-advance-repayment-for"></select>
       </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="e-single-share">
       <label class="form-label">女友分攤</label>
       <div class="split-grid">
         <button class="split-opt" data-v="null" onclick="editSelectSplit(this)">👤 我全部</button>
@@ -1269,6 +1287,7 @@ const DEFAULT_TYPES = ['費用','收入','內部轉帳','清償負債','成本',
 
 // ─── 主題色 ────────────────────────────────────────────────────────────────────
 const THEMES=[
+  {id:'vic',   name:'我的主題',primary:'#2F6F6B',light:'#2F6F6B',darker:'#2F6F6B',tint:'#E3EBE5',deep:'#293331',border:'#E3EBE5',s12:'rgba(47,111,107,.12)',s20:'rgba(47,111,107,.20)',s25:'rgba(47,111,107,.25)',s35:'rgba(47,111,107,.35)',bg:'#F7F4EE',ink:'#293331',accent:'#DDA378',swatch:'linear-gradient(135deg,#2F6F6B 0 60%,#DDA378 60% 80%,#E3EBE5 80%)'},
   {id:'blue',  name:'藍',   primary:'#3B5BDB',light:'#5C7CFA',darker:'#1A56DB',tint:'#EEF2FF',deep:'#3730A3',border:'#C7D2FE',s12:'rgba(59,91,219,.12)', s20:'rgba(59,91,219,.20)',s25:'rgba(59,91,219,.25)',s35:'rgba(59,91,219,.35)'},
   {id:'teal',  name:'青藍', primary:'#0D9488',light:'#14B8A6',darker:'#0F766E',tint:'#F0FDFA',deep:'#134E4A',border:'#99F6E4',s12:'rgba(13,148,136,.12)',s20:'rgba(13,148,136,.20)',s25:'rgba(13,148,136,.25)',s35:'rgba(13,148,136,.35)'},
   {id:'green', name:'綠',   primary:'#059669',light:'#10B981',darker:'#047857',tint:'#ECFDF5',deep:'#064E3B',border:'#A7F3D0',s12:'rgba(5,150,105,.12)', s20:'rgba(5,150,105,.20)', s25:'rgba(5,150,105,.25)', s35:'rgba(5,150,105,.35)'},
@@ -1286,11 +1305,18 @@ function applyTheme(id){
   r.setProperty('--primary-deep',t.deep);r.setProperty('--primary-border',t.border);
   r.setProperty('--primary-s12',t.s12);r.setProperty('--primary-s20',t.s20);
   r.setProperty('--primary-s25',t.s25);r.setProperty('--primary-s35',t.s35);
+  r.setProperty('--app-bg',t.bg||'#F0F2F5');r.setProperty('--app-ink',t.ink||'#1A1A2E');
+  r.setProperty('--app-accent',t.accent||t.border);
   document.querySelector('meta[name="theme-color"]').content=t.primary;
   localStorage.setItem(KEY_THEME,t.id);
   document.querySelectorAll('.theme-swatch').forEach(el=>el.classList.toggle('theme-swatch-active',el.dataset.tid===t.id));
 }
-applyTheme(localStorage.getItem(KEY_THEME)||'blue');
+const KEY_THEME_DEFAULT_MIGRATED='vic2_theme_default_migrated';
+const savedTheme=localStorage.getItem(KEY_THEME);
+if(!localStorage.getItem(KEY_THEME_DEFAULT_MIGRATED)){
+  localStorage.setItem(KEY_THEME_DEFAULT_MIGRATED,'1');
+  applyTheme(!savedTheme||savedTheme==='blue'?'vic':savedTheme);
+}else applyTheme(savedTheme||'vic');
 
 const DEFAULT_METHODS_GROUPED = {
   '現金':['現金'],
@@ -1793,7 +1819,7 @@ function updateHeaderSub(){
   const yd=data.filter(r=>r.date.startsWith(year));
   const exp=yd.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
   const inc=yd.filter(r=>r.amount>0&&r.type==='收入').reduce((s,r)=>s+r.amount,0);
-  document.getElementById('header-sub').textContent=`今年支出 ${fmt(Math.abs(exp))} · 收入 ${fmt(inc)} · 共 ${raw.filter(r=>r.date&&r.date.startsWith(year)).length} 筆`;
+  document.getElementById('header-sub').textContent=`今年支出 ${fmt(Math.abs(exp))} · 收入 ${fmt(inc)} · 共 ${transactionCount(raw.filter(r=>r.date&&r.date.startsWith(year)))} 筆`;
 }
 
 // ─── Form population ───────────────────────────────────────────────────────
@@ -2342,7 +2368,7 @@ function initFormListeners(){
     updateAdvanceFields('f');
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'f'));
-  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); updateAdvanceFields('f'); });
+  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateInstallPreview(); updateAdvanceFields('f'); updateBundleTotal('f'); });
   amtEl.addEventListener('blur',()=>{ updateSharePreview(); updateInstallPreview(); });
   document.getElementById('f-install-count').addEventListener('input',updateInstallPreview);
 
@@ -2383,6 +2409,7 @@ function initFormListeners(){
   document.getElementById('f-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('f-method').value;
     refreshMainSelectKeepValues('f');
+    if(isBundleMode('f')) refreshBundleCategories('f');
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
@@ -2392,6 +2419,7 @@ function initFormListeners(){
     autoFillAmtSign();
     const methodVal=document.getElementById('f-method').value;
     refreshMainSelectKeepValues('f');
+    if(isBundleMode('f')){refreshBundleCategories('f');updateBundleTotal('f');}
     const isCC=isCCMethod(methodVal);
     document.getElementById('f-install-extra').style.display=isCC?'flex':'none';
     if(!isCC) resetInstall('f');
@@ -2504,12 +2532,188 @@ function resetInstall(prefix){
   if(inp) inp.value='';
   if(prefix==='f') updateInstallPreview();
 }
+let bundleLineSerial=0;
+function isBundleMode(prefix){ return !document.getElementById(`${prefix}-bundle-fields`).hidden; }
+function addBundleLine(prefix,record={}){
+  const list=document.getElementById(`${prefix}-bundle-lines`);
+  const line=document.createElement('div');
+  line.className='bundle-line';
+  line.dataset.recordId=record.id||'';
+  const n=++bundleLineSerial;
+  line.innerHTML=`<div class="bundle-line-head"><span class="bundle-line-number"></span><button type="button" class="bundle-line-remove" onclick="removeBundleLine(this)">移除</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">主類別</label><select class="form-control bundle-main" id="${prefix}-bundle-main-${n}" onchange="bundleMainChanged(this)"></select></div>
+    <div class="form-group"><label class="form-label">子類別</label><select class="form-control bundle-sub" id="${prefix}-bundle-sub-${n}"></select></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">金額</label><input class="form-control bundle-amount" type="text" inputmode="decimal" placeholder="-200" oninput="bundleAmountChanged(this)"></div>
+    <div class="form-group"><label class="form-label">女友分攤</label><select class="form-control bundle-split" onchange="bundleSplitChanged(this)"><option value="self">我全部</option><option value="half">各一半</option><option value="girlfriend">全女友</option><option value="custom">自訂比例</option></select></div></div>
+    <div class="form-group bundle-custom-wrap" hidden><label class="form-label">女友比例 %</label><input class="form-control bundle-custom" type="number" inputmode="numeric" min="1" max="99" step="1" placeholder="1～99"></div>
+    <div class="form-group"><label class="form-label">代墊對象（選填）</label><input class="form-control bundle-advance" type="text" maxlength="30" placeholder="例如：父母"></div>`;
+  list.appendChild(line);
+  const main=line.querySelector('.bundle-main');
+  const sub=line.querySelector('.bundle-sub');
+  fillMainSelect(main,document.getElementById(`${prefix}-method`).value,true,document.getElementById(`${prefix}-type`).value);
+  ensureSelectOption(main,record.main||''); main.value=record.main||'';
+  updateSubByMain(main.value,sub); ensureSelectOption(sub,record.sub||''); sub.value=record.sub||'';
+  line.querySelector('.bundle-amount').value=record.amount?fmtInput(record.amount):'-';
+  const split=line.querySelector('.bundle-split');
+  split.value=record.split===0?'girlfriend':record.split===1?'half':typeof record.split==='number'?'custom':'self';
+  if(split.value==='custom') line.querySelector('.bundle-custom').value=Math.round((1-record.split)*100);
+  line.querySelector('.bundle-advance').value=record.advanceFor||'';
+  bundleSplitChanged(split);
+  refreshBundleLineNumbers(prefix);
+  updateBundleTotal(prefix);
+}
+function refreshBundleLineNumbers(prefix){
+  document.querySelectorAll(`#${prefix}-bundle-lines .bundle-line-number`).forEach((el,i)=>{el.textContent=`項目 ${i+1}`;});
+}
+function bundleMainChanged(main){
+  updateSubByMain(main.value,main.closest('.bundle-line').querySelector('.bundle-sub'));
+}
+function bundleSplitChanged(select){
+  select.closest('.bundle-line').querySelector('.bundle-custom-wrap').hidden=select.value!=='custom';
+}
+function bundleAmountChanged(input){
+  if(!input.value||input.value==='-') input.value='-';
+  else if(parseAmt(input.value)>0) input.value='-'+input.value.replace(/^\+/,'');
+  updateBundleTotal(input.closest('.bundle-fields').id[0]);
+}
+function updateBundleTotal(prefix){
+  if(!isBundleMode(prefix)) return;
+  const {enteredCents,itemCents,complete}=bundleTotals(prefix);
+  document.getElementById(`${prefix}-bundle-sum`).textContent=`-$${fmtInput(Math.abs(itemCents)/100)}`;
+  const status=document.getElementById(`${prefix}-bundle-status`);
+  status.classList.toggle('matched',complete&&enteredCents<0&&enteredCents===itemCents);
+  status.textContent=enteredCents>=0?'請填交易總金額':!complete&&enteredCents===itemCents?'尚有未填項目':enteredCents===itemCents?'金額相符':`差額 $${fmtInput(Math.abs(enteredCents-itemCents)/100)}`;
+}
+function bundleTotals(prefix){
+  const enteredCents=Math.round(parseAmt(document.getElementById(`${prefix}-amount`).value)*100);
+  const inputs=[...document.querySelectorAll(`#${prefix}-bundle-lines .bundle-amount`)];
+  const itemCents=inputs.reduce((sum,input)=>sum+Math.round(parseAmt(input.value)*100),0);
+  return {enteredCents,itemCents,complete:inputs.length>=2&&inputs.every(input=>parseAmt(input.value)<0)};
+}
+function bundleAmountError(prefix){
+  const {enteredCents,itemCents,complete}=bundleTotals(prefix);
+  if(enteredCents>=0) return '請填負數的交易總金額';
+  if(!complete) return '請填完整拆帳項目的負數金額';
+  if(enteredCents!==itemCents) return `交易總金額與項目加總差 $${fmtInput(Math.abs(enteredCents-itemCents)/100)}，請核對`;
+  return '';
+}
+function removeBundleLine(button){
+  const line=button.closest('.bundle-line');
+  const prefix=line.closest('.bundle-fields').id[0];
+  if(document.querySelectorAll(`#${prefix}-bundle-lines .bundle-line`).length<=2){showToast('拆帳至少需要兩個項目');return;}
+  const id=line.dataset.recordId;
+  if(id&&loadRecords().some(r=>r.advanceRepaymentFor===id)){showToast('此代墊項目已有收款，不能移除');return;}
+  line.remove(); refreshBundleLineNumbers(prefix); updateBundleTotal(prefix);
+}
+function refreshBundleCategories(prefix){
+  document.querySelectorAll(`#${prefix}-bundle-lines .bundle-line`).forEach(line=>{
+    const main=line.querySelector('.bundle-main'),sub=line.querySelector('.bundle-sub');
+    const oldMain=main.value,oldSub=sub.value;
+    fillMainSelect(main,document.getElementById(`${prefix}-method`).value,true,document.getElementById(`${prefix}-type`).value);
+    ensureSelectOption(main,oldMain); main.value=oldMain;
+    updateSubByMain(oldMain,sub); ensureSelectOption(sub,oldSub); sub.value=oldSub;
+  });
+}
+function setBundleMode(prefix,active,records=[]){
+  document.getElementById(`${prefix}-bundle-fields`).hidden=!active;
+  document.getElementById(`${prefix}-single-category`).style.display=active?'none':'';
+  document.getElementById(`${prefix}-single-share`).style.display=active?'none':'';
+  document.getElementById(`${prefix}-loan-extra`).style.display=active?'none':document.getElementById(`${prefix}-main`).value==='貸款'?'block':'none';
+  document.getElementById(`${prefix}-advance-toggle`).hidden=active;
+  document.getElementById(`${prefix}-advance-fields`).hidden=active;
+  const amount=document.getElementById(`${prefix}-amount`);
+  if(!amount.dataset.singlePlaceholder) amount.dataset.singlePlaceholder=amount.placeholder;
+  amount.placeholder=active?'輸入交易總金額':amount.dataset.singlePlaceholder;
+  amount.readOnly=false;
+  document.getElementById(`${prefix}-amount-label`).textContent=active?'交易總金額':prefix==='f'?'金額（負數=支出）':'金額';
+  document.getElementById(`${prefix}-bundle-toggle`).classList.toggle('active',active);
+  document.getElementById(`${prefix}-bundle-lines`).replaceChildren();
+  if(active){
+    (records.length?records:[{},{}]).forEach(record=>addBundleLine(prefix,record));
+    if(prefix==='e'&&records[0]?.bundleId) amount.value=fmtInput(records.reduce((sum,record)=>sum+record.amount,0));
+    updateBundleTotal(prefix);
+  } else updateAdvanceFields(prefix,prefix==='e'?currentEditId:null);
+}
+function toggleBundle(prefix){
+  const type=document.getElementById(`${prefix}-type`).value;
+  if(!['費用','成本'].includes(type)){showToast('拆帳只適用費用與成本');return;}
+  if(!isBundleMode(prefix)){
+    if(document.getElementById(`${prefix}-main`).value==='貸款'){showToast('貸款請維持單筆記錄');return;}
+    const source=prefix==='e'?loadRecords().find(r=>r.id===currentEditId):null;
+    if((source&&source.amount>=0)||document.getElementById(`${prefix}-advance-repayment-for`).value){
+      showToast('收款記錄不能改成拆帳');return;
+    }
+    const split=prefix==='f'?addSplit:editSplit;
+    if(split==='repay'){showToast('女友還款不能拆帳');return;}
+    const record={main:document.getElementById(`${prefix}-main`).value,sub:document.getElementById(`${prefix}-sub`).value,
+      amount:parseAmt(document.getElementById(`${prefix}-amount`).value),split,advanceFor:document.getElementById(`${prefix}-advance-for`).value.trim()};
+    setBundleMode(prefix,true,[record,{}]);
+  } else {
+    if(prefix==='e'&&loadRecords().some(r=>r.id===currentEditId&&r.bundleId)){
+      showToast('已儲存的拆帳請保留拆帳格式');return;
+    }
+    if(!confirm('解除拆帳後，總金額會歸到第一個項目的類別；分攤與代墊需重新設定。確定嗎？')) return;
+    const first=document.querySelector(`#${prefix}-bundle-lines .bundle-line`);
+    ensureSelectOption(document.getElementById(`${prefix}-main`),first.querySelector('.bundle-main').value);
+    document.getElementById(`${prefix}-main`).value=first.querySelector('.bundle-main').value;
+    updateSubByMain(document.getElementById(`${prefix}-main`).value,document.getElementById(`${prefix}-sub`));
+    ensureSelectOption(document.getElementById(`${prefix}-sub`),first.querySelector('.bundle-sub').value);
+    document.getElementById(`${prefix}-sub`).value=first.querySelector('.bundle-sub').value;
+    document.getElementById(`${prefix}-advance-for`).value='';
+    if(prefix==='f') addSplit=null; else editSplit=null;
+    const scope=prefix==='f'?'#panel-add':'#edit-overlay';
+    document.querySelectorAll(`${scope} .split-opt`).forEach(btn=>btn.classList.toggle('active',btn.dataset.v==='null'));
+    document.getElementById(`${prefix}-custom-wrap`).style.display='none';
+    setBundleMode(prefix,false);
+  }
+}
+function collectBundleLines(prefix){
+  const lines=[...document.querySelectorAll(`#${prefix}-bundle-lines .bundle-line`)];
+  if(lines.length<2) return {error:'拆帳至少需要兩個項目'};
+  const records=[];
+  for(const line of lines){
+    const main=line.querySelector('.bundle-main').value,sub=line.querySelector('.bundle-sub').value;
+    const value=parseAmt(line.querySelector('.bundle-amount').value);
+    if(!main) return {error:'每個拆帳項目都要選主類別'};
+    if(main==='貸款') return {error:'貸款請維持單筆記錄'};
+    if(!Number.isFinite(value)||value>=0) return {error:'每個拆帳項目都要填負數金額'};
+    const splitValue=line.querySelector('.bundle-split').value;
+    const pct=Number(line.querySelector('.bundle-custom').value);
+    if(splitValue==='custom'&&(!Number.isInteger(pct)||pct<1||pct>99)) return {error:'女友比例請填 1～99%'};
+    const split=splitValue==='half'?1:splitValue==='girlfriend'?0:splitValue==='custom'?1-pct/100:null;
+    const advanceFor=line.querySelector('.bundle-advance').value.trim();
+    if(advanceFor&&split!==null) return {error:'同一項目不能同時代墊與女友分攤'};
+    records.push({id:line.dataset.recordId||genId(),main,sub,amount:value,split,...(advanceFor?{advanceFor}:{})});
+  }
+  return {records};
+}
 function submitAdd(){
   const date=document.getElementById('f-date').value;
   const amount=parseAmt(document.getElementById('f-amount').value);
   const advanceFor=document.getElementById('f-advance-for').value.trim();
   const advanceRepaymentFor=document.getElementById('f-advance-repayment-for').value;
   if(!requireValidDate('f-date')) return;
+  if(isBundleMode('f')){
+    const type=document.getElementById('f-type').value;
+    if(!['費用','成本'].includes(type)){showToast('拆帳只適用費用與成本');return;}
+    const result=collectBundleLines('f');
+    if(result.error){showToast(result.error);return;}
+    const amountError=bundleAmountError('f');
+    if(amountError){showToast(amountError);return;}
+    const method=document.getElementById('f-method').value;
+    const note=document.getElementById('f-note').value.trim();
+    const bundleId=genId();
+    const installmentCount=isCCMethod(method)&&document.getElementById('f-install-toggle').classList.contains('active')
+      ?parseInt(document.getElementById('f-install-count').value):0;
+    const rows=result.records.map((line,bundleIndex)=>({
+      ...line,bundleId,bundleIndex,date,type,method,note,
+      ...(installmentCount>=2?{installments:installmentCount,billedDate:date}:{})
+    }));
+    const data=loadRecords(); data.push(...rows); saveRecords(data);
+    showToast('✅ 拆帳記錄成功！');
+    resetAddForm({type,main:rows[0].main}); updateHeaderSub();
+    return;
+  }
   if(!amount){ showToast('請填寫金額'); return; }
   if(advanceFor&&(amount>=0||!['費用','成本'].includes(document.getElementById('f-type').value)||addSplit!==null)){
     showToast('代墊須為費用或成本，且不可同時選女友分攤'); return;
@@ -2570,12 +2774,32 @@ function resetAddForm(lastRec=null){
   document.getElementById('f-custom-wrap').style.display='none';
   document.getElementById('f-custom-pct').value='';
   document.getElementById('share-preview').classList.remove('show');
+  setBundleMode('f',false);
   updateInstallPreview();
   updateAdvanceFields('f');
   setAdvanceFieldsExpanded('f',false);
 }
 
 // ─── Records ───────────────────────────────────────────────────────────────
+function transactionKey(record){return record.bundleId||record.id;}
+function transactionCount(records){return new Set(records.map(transactionKey)).size;}
+function collapseTransactions(records){
+  const groups=new Map();
+  records.forEach(record=>{
+    const key=transactionKey(record);
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(record);
+  });
+  return [...groups.values()].map(rows=>{
+    if(!rows[0].bundleId) return rows[0];
+    rows.sort((a,b)=>(a.bundleIndex||0)-(b.bundleIndex||0));
+    return {...rows[0],amount:rows.reduce((sum,r)=>sum+Number(r.amount||0),0),bundleRows:rows};
+  });
+}
+function matchingTransactions(allRecords,matchedRecords){
+  const keys=new Set(matchedRecords.map(transactionKey));
+  return allRecords.filter(r=>keys.has(transactionKey(r)));
+}
 function initSearchListeners(){
   document.getElementById('search-input').addEventListener('input',()=>{ renderRecords(); updateClearBtn(); });
   ['filter-from','filter-to']
@@ -2667,7 +2891,7 @@ function flowSummaryHTML(records){
   const exp=records.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
   const inc=records.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
   const netText=total<0?"-"+fmt(Math.abs(total)):fmt(total);
-  const parts=["共 "+records.length+" 筆","淨現流 "+netText];
+  const parts=["共 "+transactionCount(records)+" 筆","淨現流 "+netText];
   if(inc) parts.push("流入 "+fmt(inc));
   if(exp) parts.push("流出 "+fmt(Math.abs(exp)));
   return parts.map(p=>"<span>"+p+"</span>").join("");
@@ -2714,9 +2938,10 @@ function updateRecordSelectionSummary(records){
   toggle.textContent=recordSelectionMode?'完成':'加總';
   summary.hidden=!recordSelectionMode;
   if(!recordSelectionMode) return;
-  const existingIds=new Set(records.map(r=>r.id));
+  const transactions=collapseTransactions(records);
+  const existingIds=new Set(transactions.map(r=>r.id));
   for(const id of selectedRecordIds) if(!existingIds.has(id)) selectedRecordIds.delete(id);
-  const selected=records.filter(r=>selectedRecordIds.has(r.id));
+  const selected=transactions.filter(r=>selectedRecordIds.has(r.id));
   const hidden=selected.length-document.querySelectorAll('#records-list .tx-item.selected').length;
   const total=selected.reduce((sum,r)=>sum+Number(r.amount||0),0);
   document.getElementById('record-selection-count').textContent=`已選 ${selected.length} 筆${hidden?`（${hidden} 筆未顯示）`:''}`;
@@ -2729,6 +2954,8 @@ function renderRecords(){
   const allRecords=loadRecords();
   const gfSettle=gfSettlement(allRecords);
   const filtered=applyFilters(allRecords).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  const transactions=collapseTransactions(matchingTransactions(allRecords,filtered)
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)));
   const list=document.getElementById('records-list');
   const sumEl=document.getElementById('records-summary');
   const catEl=document.getElementById('records-cat-stats');
@@ -2737,7 +2964,7 @@ function renderRecords(){
     const exp=filtered.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
     const inc=filtered.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
     const netText=total<0?`-${fmt(Math.abs(total))}`:fmt(total);
-    const parts=[`共 ${filtered.length} 筆`,`淨現流 ${netText}`];
+    const parts=[`共 ${transactionCount(filtered)} 筆`,`淨現流 ${netText}`];
     if(inc) parts.push(`流入 ${fmt(inc)}`);
     if(exp) parts.push(`流出 ${fmt(Math.abs(exp))}`);
     const activeSplits=[...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')].map(b=>b.dataset.val);
@@ -2795,7 +3022,7 @@ function renderRecords(){
     updateClearBtn(); updateRecordSelectionSummary(allRecords); return;
   }
   const groups={};
-  filtered.forEach(r=>{ (groups[r.date]=groups[r.date]||[]).push(r); });
+  transactions.forEach(r=>{ (groups[r.date]=groups[r.date]||[]).push(r); });
   const sortedDates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
   const monthGroups={};
   filtered.forEach(r=>{ const m=r.date.slice(0,7); (monthGroups[m]=monthGroups[m]||[]).push(r); });
@@ -2811,6 +3038,31 @@ function renderRecords(){
 }
 
 function txItemHTML(r,gfItem=null,allRecords=[]){
+  if(r.bundleRows){
+    const rows=r.bundleRows;
+    const bundleSettlement=gfSettlement(allRecords).byId;
+    const own=rows.reduce((sum,row)=>sum+(row.advanceFor?0:Math.abs(vicShare(row.amount,row.split))),0);
+    const gfPending=rows.reduce((sum,row)=>sum+(bundleSettlement[row.id]?.remaining||0),0);
+    const advancePending=rows.reduce((sum,row)=>sum+(row.advanceFor?advanceRemaining(row,allRecords):0),0);
+    const summary=rows.map(row=>`${row.main||'未分類'}${row.sub?`／${row.sub}`:''} ${fmt(Math.abs(row.amount))}`).join(' · ');
+    const selected=recordSelectionMode&&selectedRecordIds.has(r.id);
+    return `<div class="tx-swipe-wrap">
+      <div class="tx-copy-btn" onclick="copyRecord('${r.id}')">複製</div>
+      <div class="tx-del-btn" onclick="swipeDelete('${r.id}')">刪除</div>
+      <div class="tx-item${selected?' selected':''}" data-rid="${r.id}"${recordSelectionMode?` role="checkbox" aria-checked="${selected}" tabindex="0"`:''}>
+        ${recordSelectionMode?`<span class="tx-select-check" aria-hidden="true">${selected?'✓':''}</span>`:''}
+        <div class="tx-icon-wrap ${catBg(r.type)}">${catIcon(r.type)}</div>
+        <div class="tx-body"><div class="tx-main">${htmlEsc(r.method||'')} · 拆帳 <span class="badge badge-half">${rows.length} 項</span></div>
+          <div class="tx-note tx-bundle-summary">${htmlEsc(summary)}</div>
+          ${r.note?`<div class="tx-note">${htmlEsc(r.note)}</div>`:''}
+          ${gfPending?`<div class="gf-status-line">女友待還 ${fmt(gfPending)}</div>`:''}
+          ${advancePending?`<div class="gf-status-line">代墊待收 ${fmt(advancePending)}</div>`:''}
+        </div>
+        <div class="tx-right"><div class="tx-amount-val clr-expense">${fmt(Math.abs(r.amount))}</div>
+          ${own!==Math.abs(r.amount)?`<div class="tx-vic-share">我的支出 ${fmt(own)}</div>`:''}</div>
+      </div>
+    </div>`;
+  }
   const ic=catIcon(r.main||r.type), bg=catBg(r.main||r.type);
   const amtCls=r.amount<0?'clr-expense':r.amount>0?'clr-income':'clr-transfer';
   const amtStr=fmt(Math.abs(r.amount));
@@ -2934,8 +3186,15 @@ function initRecordContextMenu(list){
 }
 function swipeDelete(id){
   _swOpen=null;
-  const data=loadRecords().filter(x=>x.id!==id);
-  data.forEach(r=>{ if(r.advanceRepaymentFor===id) delete r.advanceRepaymentFor; });
+  const records=loadRecords();
+  const source=records.find(r=>r.id===id);
+  if(!source) return;
+  const ids=new Set(records.filter(r=>source.bundleId?r.bundleId===source.bundleId:r.id===id).map(r=>r.id));
+  if(source.bundleId&&records.some(r=>ids.has(r.advanceRepaymentFor))){
+    showToast('拆帳已有連結的收款，請先處理收款記錄');return;
+  }
+  const data=records.filter(r=>!ids.has(r.id));
+  data.forEach(r=>{ if(ids.has(r.advanceRepaymentFor)) delete r.advanceRepaymentFor; });
   saveRecords(data);
   renderRecords(); updateHeaderSub(); renderStats(); showToast('🗑 已刪除');
   scheduleSyncToCloud();
@@ -2945,10 +3204,16 @@ function copyRecord(id){
   const records=loadRecords();
   const orig=records.find(r=>r.id===id);
   if(!orig) return;
-  const copy={...orig, id:genId()};
-  delete copy.advanceRepaymentFor;
-  delete copy.advanceGenerated;
-  records.unshift(copy);
+  const source=orig.bundleId?records.filter(r=>r.bundleId===orig.bundleId):[orig];
+  const bundleId=orig.bundleId?genId():null;
+  const copies=source.map(row=>{
+    const copy={...row,id:genId()};
+    if(bundleId) copy.bundleId=bundleId;
+    delete copy.advanceRepaymentFor;
+    delete copy.advanceGenerated;
+    return copy;
+  });
+  records.unshift(...copies);
   saveRecords(records);
   renderRecords(); updateHeaderSub(); renderStats(); showToast('✅ 已複製');
   scheduleSyncToCloud();
@@ -2966,6 +3231,7 @@ function initEditListeners(){
   document.getElementById('e-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
     refreshMainSelectKeepValues('e');
+    if(isBundleMode('e')) refreshBundleCategories('e');
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     if(!isCC) resetInstall('e');
@@ -2974,12 +3240,13 @@ function initEditListeners(){
   document.getElementById('e-type').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
     refreshMainSelectKeepValues('e');
+    if(isBundleMode('e')){refreshBundleCategories('e');updateBundleTotal('e');}
     const isCC=isCCMethod(methodVal);
     document.getElementById('e-install-extra').style.display=isCC?'block':'none';
     updateAdvanceFields('e',currentEditId);
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
-  document.getElementById('e-amount').addEventListener('input',()=>{ calcLoanInterest('e'); updateAdvanceFields('e',currentEditId); });
+  document.getElementById('e-amount').addEventListener('input',()=>{ calcLoanInterest('e'); updateAdvanceFields('e',currentEditId); updateBundleTotal('e'); });
   document.getElementById('e-date').addEventListener('change',()=>updateAdvanceFields('e',currentEditId));
   document.getElementById('btn-save').addEventListener('click',saveEdit);
   document.getElementById('btn-delete').addEventListener('click',deleteEdit);
@@ -3049,6 +3316,8 @@ function openEdit(id){
   } else { eWrap.style.display='none'; }
   updateAdvanceFields('e',id,r.advanceRepaymentFor||'');
   setAdvanceFieldsExpanded('e',Boolean(r.advanceFor||r.advanceRepaymentFor));
+  const bundleRows=r.bundleId?loadRecords().filter(x=>x.bundleId===r.bundleId).sort((a,b)=>a.bundleIndex-b.bundleIndex):[];
+  setBundleMode('e',Boolean(bundleRows.length),bundleRows);
   document.getElementById('edit-overlay').classList.add('open');
 }
 
@@ -3078,6 +3347,42 @@ function saveEdit(){
   if(!requireValidDate('e-date')) return;
   const data=loadRecords(); const idx=data.findIndex(x=>x.id===currentEditId);
   if(idx<0) return;
+  if(isBundleMode('e')){
+    const type=document.getElementById('e-type').value;
+    if(!['費用','成本'].includes(type)){showToast('拆帳只適用費用與成本');return;}
+    const result=collectBundleLines('e');
+    if(result.error){showToast(result.error);return;}
+    const amountError=bundleAmountError('e');
+    if(amountError){showToast(amountError);return;}
+    const original=data[idx];
+    const existing=original.bundleId?data.filter(r=>r.bundleId===original.bundleId):[original];
+    for(const row of existing){
+      const linked=advanceRepayments(data,row.id);
+      const next=result.records.find(r=>r.id===row.id);
+      if(linked.length&&(!next||!next.advanceFor||linked.some(r=>r.date<document.getElementById('e-date').value)
+        ||linked.reduce((sum,r)=>sum+r.amount,0)>Math.abs(next.amount))){
+        showToast('代墊項目已有收款，請先調整收款記錄');return;
+      }
+    }
+    const bundleId=original.bundleId||genId();
+    const date=document.getElementById('e-date').value;
+    const method=document.getElementById('e-method').value;
+    const note=document.getElementById('e-note').value.trim();
+    const n=isCCMethod(method)&&document.getElementById('e-install-toggle').classList.contains('active')
+      ?parseInt(document.getElementById('e-install-count').value):0;
+    const oldById=new Map(existing.map(r=>[r.id,r]));
+    const updated=result.records.map((line,bundleIndex)=>{
+      const row={...oldById.get(line.id),...line,bundleId,bundleIndex,date,type,method,note};
+      if(!line.advanceFor) delete row.advanceFor;
+      if(n>=2){row.installments=n;row.billedDate=row.billedDate||date;}
+      else {delete row.installments;delete row.billedDate;delete row.paidInstallments;}
+      return row;
+    });
+    saveRecords([...data.filter(r=>!existing.some(item=>item.id===r.id)),...updated]);
+    closeModal();renderRecords();updateHeaderSub();showToast('✅ 拆帳已更新');
+    scheduleSyncToCloud();
+    return;
+  }
   const main=document.getElementById('e-main').value;
   const updated={...data[idx],
     date:document.getElementById('e-date').value,
@@ -3131,10 +3436,9 @@ function saveEdit(){
 function deleteEdit(){
   if(!currentEditId) return;
   if(!confirm('確定刪除這筆記帳？')) return;
-  const data=loadRecords().filter(x=>x.id!==currentEditId);
-  data.forEach(r=>{ if(r.advanceRepaymentFor===currentEditId) delete r.advanceRepaymentFor; });
-  saveRecords(data);
-  closeModal(); renderRecords(); updateHeaderSub(); showToast('🗑 已刪除');
+  const id=currentEditId;
+  swipeDelete(id);
+  if(!loadRecords().some(r=>r.id===id)) closeModal();
 }
 
 // ─── Stats ─────────────────────────────────────────────────────────────────
@@ -3429,7 +3733,7 @@ function renderCreditCardReport(){
   const total=rows.reduce((s,r)=>s+Math.abs(r.amount),0);
   const own=rows.reduce((s,r)=>s+r.ownAmount,0);
   const pending=rows.reduce((s,r)=>s+r.pendingAmount,0);
-  const count=rows.length;
+  const count=transactionCount(rows);
   const byCard=sumCreditCardRows(rows,r=>r.method||'未命名信用卡');
   const byMain=sumCreditCardRows(rows,r=>r.main||'未分類',r=>r.ownAmount).filter(x=>x.amount>0);
   const topCard=byCard[0];
@@ -3446,13 +3750,15 @@ function renderCreditCardReport(){
   ].map(([k,v])=>`<div class="cc-report-box"><div class="cc-report-box-label">${k}</div><div class="cc-report-box-val">${v}</div></div>`).join('');
   renderCreditCardCardList(rows);
 }
-function sumCreditCardRows(rows,getKey,getAmount=r=>Math.abs(r.amount)){
+function sumCreditCardRows(rows,getKey,getAmount=r=>Math.abs(r.amount),countTransactions=false){
   const map={};
   rows.forEach(r=>{
     const key=getKey(r);
-    if(!map[key]) map[key]={label:key,amount:0,count:0};
+    if(!map[key]) map[key]={label:key,amount:0,count:0,keys:new Set()};
     map[key].amount+=getAmount(r);
-    map[key].count+=1;
+    const txKey=transactionKey(r);
+    if(!countTransactions||!map[key].keys.has(txKey)) map[key].count+=1;
+    map[key].keys.add(txKey);
   });
   return Object.values(map).sort((a,b)=>b.amount-a.amount||b.count-a.count||a.label.localeCompare(b.label,'zh-Hant'));
 }
@@ -3513,7 +3819,7 @@ function renderCreditCardSection(card,rows,idx){
       <div class="cc-report-card-meta">
         <div class="${own?'clr-expense':''}" style="font-size:15px;font-weight:800">我的支出 $${fmt(own)}</div>
         <div class="cc-report-gross">實刷 $${fmt(total)}${pending?` · 待收 $${fmt(pending)}`:''}</div>
-        <div>${fmt(rows.length)} 筆${top?` · ${escHtml(top.label)}`:''}</div>
+        <div>${fmt(transactionCount(rows))} 筆${top?` · ${escHtml(top.label)}`:''}</div>
       </div>
     </div>
     ${monthly}
@@ -3523,7 +3829,7 @@ function renderCreditCardSection(card,rows,idx){
   </div>`;
 }
 function renderCreditCardMonthTable(rows){
-  const byMonth=sumCreditCardRows(rows,r=>r.date.slice(0,7)).sort((a,b)=>a.label.localeCompare(b.label));
+  const byMonth=sumCreditCardRows(rows,r=>r.date.slice(0,7),r=>Math.abs(r.amount),true).sort((a,b)=>a.label.localeCompare(b.label));
   const ownByMonth=Object.fromEntries(sumCreditCardRows(rows,r=>r.date.slice(0,7),r=>r.ownAmount).map(x=>[x.label,x.amount]));
   return `<div class="cc-report-title">每月刷卡</div>
     <table class="cc-report-table">
@@ -3711,6 +4017,10 @@ function splitPdfText(ctx,text,maxWidth){
 }
 
 function drawReportPdfPages(rows,title,subtitle,landscape,opts={}){
+  const colors={
+    primary:'#2F6F6B',page:'#F7F4EE',text:'#293331',accent:'#DDA378',
+    sage:'#E3EBE5',white:'#FFFFFF',muted:'#66736F',line:'#D1DDD4'
+  };
   const scale=2;
   const pagePt=landscape?{w:842,h:595}:{w:595,h:842};
   const pagePx={w:pagePt.w*scale,h:pagePt.h*scale};
@@ -3735,31 +4045,36 @@ function drawReportPdfPages(rows,title,subtitle,landscape,opts={}){
     const canvas=document.createElement('canvas');
     canvas.width=pagePx.w; canvas.height=pagePx.h;
     const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,pagePx.w,pagePx.h);
-    ctx.fillStyle='#111827';
+    ctx.fillStyle=colors.page; ctx.fillRect(0,0,pagePx.w,pagePx.h);
+    ctx.fillStyle=colors.primary;
     ctx.font=`700 ${26*scale}px ${font}`;
     ctx.fillText(title,margin,34*scale);
     ctx.font=`400 ${13*scale}px ${font}`;
-    ctx.fillStyle='#6B7280';
+    ctx.fillStyle=colors.muted;
     ctx.fillText(subtitle,margin,54*scale);
+    ctx.fillStyle=colors.accent;
+    ctx.fillRect(margin,64*scale,42*scale,2*scale);
     ctx.textBaseline='middle';
 
     let y=tableTop;
     const drawRow=(row,rowH,isHeader=false)=>{
       let x=margin;
-      const fill=isHeader?'#F8FAFC':
-        row.type==='group'?'#EFF6FF':
-        row.type==='total'||row.type==='net'||row.type==='quarter'?'#F3F4F6':'#FFFFFF';
+      const fill=isHeader?(row.type==='qm-sub-header'?colors.sage:colors.primary):
+        row.type==='group'?colors.sage:
+        row.type==='total'||row.type==='net'||row.type==='quarter'?colors.page:colors.white;
       ctx.fillStyle=fill; ctx.fillRect(margin,y,tableW,rowH);
-      ctx.strokeStyle='#E5E7EB'; ctx.lineWidth=1*scale;
+      if(!isHeader&&(row.type==='total'||row.type==='net'||row.type==='quarter')){
+        ctx.fillStyle=colors.accent; ctx.fillRect(margin,y,3*scale,rowH);
+      }
+      ctx.strokeStyle=colors.line; ctx.lineWidth=1*scale;
       ctx.beginPath(); ctx.moveTo(margin,y+rowH); ctx.lineTo(margin+tableW,y+rowH); ctx.stroke();
       (opts.groupBoundaries||[]).forEach(boundary=>{
         const bx=margin+colW.slice(0,boundary).reduce((s,w)=>s+w,0);
-        ctx.strokeStyle='#D1D5DB'; ctx.lineWidth=1.2*scale;
+        ctx.strokeStyle=colors.line; ctx.lineWidth=1.2*scale;
         ctx.beginPath(); ctx.moveTo(bx,y); ctx.lineTo(bx,y+rowH); ctx.stroke();
       });
       if(row.spans){
-        ctx.fillStyle='#1F2937';
+        ctx.fillStyle=colors.white;
         ctx.font=`700 18px ${font}`;
         row.spans.forEach(span=>{
           const sx=margin+colW.slice(0,span.start).reduce((s,w)=>s+w,0);
@@ -3773,8 +4088,9 @@ function drawReportPdfPages(rows,title,subtitle,landscape,opts={}){
       }
       row.cells.forEach((cell,i)=>{
         const w=colW[i]||otherW;
-        ctx.fillStyle=isHeader||row.type!=='normal'?'#1F2937':'#374151';
-        const bodySize=i===0?20:19;
+        ctx.fillStyle=isHeader&&row.type!=='qm-sub-header'?colors.white:
+          row.type==='group'||row.type==='total'||row.type==='net'||row.type==='quarter'?colors.primary:colors.text;
+        const bodySize=i===0?(opts.labelFontSize??20):(opts.valueFontSize??19);
         const fontSize=row.type==='qm-sub-header'?13:bodySize;
         ctx.font=`${isHeader||row.type!=='normal'?'700':'400'} ${fontSize}px ${font}`;
         const lines=splitPdfText(ctx,cell,w-10*scale);
@@ -3801,7 +4117,7 @@ function drawReportPdfPages(rows,title,subtitle,landscape,opts={}){
     }
     ctx.textBaseline='alphabetic';
     ctx.font=`400 ${12*scale}px ${font}`;
-    ctx.fillStyle='#9CA3AF';
+    ctx.fillStyle=colors.muted;
     ctx.fillText(`第 ${(opts.pageOffset||0)+pages.length+1} 頁`,margin,pagePx.h-16*scale);
     pages.push({dataUrl:canvas.toDataURL('image/jpeg',0.92),width:pagePx.w,height:pagePx.h,pageW:pagePt.w,pageH:pagePt.h});
   }
@@ -3877,7 +4193,8 @@ function exportReportPDF(){
       );
       return acc.concat(sectionPages);
     },[])
-    :drawReportPdfPages(rows,title,subtitle,false);
+    :drawReportPdfPages(rows,title,subtitle,false,
+      reportMonth===0?{rowBase:34,rowTall:48,labelFontSize:18,valueFontSize:17}:{});
   const blob=buildPdfFromJpegs(pages);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -4519,7 +4836,7 @@ function renderCCChart(data, prefix){
 
 // ─── Settings editors ──────────────────────────────────────────────────────
 function renderThemePicker(){
-  const cur=localStorage.getItem(KEY_THEME)||'blue';
+  const cur=localStorage.getItem(KEY_THEME)||'vic';
   const el=document.getElementById('theme-picker'); if(!el) return;
   el.innerHTML=THEMES.map(t=>`
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
@@ -5300,8 +5617,13 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.102';
+const APP_VERSION='2.103';
 const CHANGELOG=[
+  {version:'2.103',date:'2026-11-25',items:[
+    '預設套用我的主題配色，報表 PDF 同步使用相同色系',
+    '新增拆帳：單筆交易可記錄多個類別，各項分別設定女友分攤與代墊',
+    '拆帳時顯示項目加總與差額，金額相符才能儲存',
+  ]},
   {version:'2.102',date:'2026-11-03',items:[
     '新增貸款依該貸款月報表預估帶入金額，預估為零時不沿用其他貸款金額',
   ]},
