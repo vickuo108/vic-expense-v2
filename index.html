@@ -2615,18 +2615,25 @@ function refreshBundleCategories(prefix){
   });
 }
 function setBundleMode(prefix,active,records=[]){
-  document.getElementById(`${prefix}-bundle-fields`).hidden=!active;
+  const bundleFields=document.getElementById(`${prefix}-bundle-fields`);
+  bundleFields.hidden=!active;
   document.getElementById(`${prefix}-single-category`).style.display=active?'none':'';
   document.getElementById(`${prefix}-single-share`).style.display=active?'none':'';
   document.getElementById(`${prefix}-loan-extra`).style.display=active?'none':document.getElementById(`${prefix}-main`).value==='貸款'?'block':'none';
   document.getElementById(`${prefix}-advance-toggle`).hidden=active;
-  document.getElementById(`${prefix}-advance-fields`).hidden=active;
+  const advanceFields=document.getElementById(`${prefix}-advance-fields`);
+  if(active){
+    advanceFields.dataset.beforeBundleExpanded=String(!advanceFields.hidden);
+    advanceFields.hidden=true;
+  }
   const amount=document.getElementById(`${prefix}-amount`);
   if(!amount.dataset.singlePlaceholder) amount.dataset.singlePlaceholder=amount.placeholder;
   amount.placeholder=active?'輸入交易總金額':amount.dataset.singlePlaceholder;
   amount.readOnly=false;
   document.getElementById(`${prefix}-amount-label`).textContent=active?'交易總金額':prefix==='f'?'金額（負數=支出）':'金額';
-  document.getElementById(`${prefix}-bundle-toggle`).classList.toggle('active',active);
+  const toggle=document.getElementById(`${prefix}-bundle-toggle`);
+  toggle.classList.toggle('active',active);
+  toggle.textContent=active?'取消拆帳':'拆帳';
   document.getElementById(`${prefix}-bundle-lines`).replaceChildren();
   if(active){
     (records.length?records:[{},{}]).forEach(record=>addBundleLine(prefix,record));
@@ -2634,10 +2641,18 @@ function setBundleMode(prefix,active,records=[]){
     updateBundleTotal(prefix);
   } else updateAdvanceFields(prefix,prefix==='e'?currentEditId:null);
 }
+function savedBundleCancellationError(data,bundleId){
+  const rows=data.filter(r=>r.bundleId===bundleId);
+  const ids=new Set(rows.map(r=>r.id));
+  if(data.some(r=>ids.has(r.advanceRepaymentFor))) return '拆帳已有連結的代墊收款，請先處理收款記錄';
+  const settlement=gfSettlement(data);
+  if(rows.some(r=>(settlement.byId[r.id]?.paid||0)>0)) return '拆帳已有女友還款對應，不能直接取消';
+  return '';
+}
 function toggleBundle(prefix){
-  const type=document.getElementById(`${prefix}-type`).value;
-  if(!['費用','成本'].includes(type)){showToast('拆帳只適用費用與成本');return;}
   if(!isBundleMode(prefix)){
+    const type=document.getElementById(`${prefix}-type`).value;
+    if(!['費用','成本'].includes(type)){showToast('拆帳只適用費用與成本');return;}
     if(document.getElementById(`${prefix}-main`).value==='貸款'){showToast('貸款請維持單筆記錄');return;}
     const source=prefix==='e'?loadRecords().find(r=>r.id===currentEditId):null;
     if((source&&source.amount>=0)||document.getElementById(`${prefix}-advance-repayment-for`).value){
@@ -2645,26 +2660,31 @@ function toggleBundle(prefix){
     }
     const split=prefix==='f'?addSplit:editSplit;
     if(split==='repay'){showToast('女友還款不能拆帳');return;}
-    const record={main:document.getElementById(`${prefix}-main`).value,sub:document.getElementById(`${prefix}-sub`).value,
-      amount:parseAmt(document.getElementById(`${prefix}-amount`).value),split,advanceFor:document.getElementById(`${prefix}-advance-for`).value.trim()};
+    const record={id:source?.id||'',main:document.getElementById(`${prefix}-main`).value,sub:document.getElementById(`${prefix}-sub`).value,
+      amount:parseAmt(document.getElementById(`${prefix}-amount`).value),split:null,advanceFor:document.getElementById(`${prefix}-advance-for`).value.trim()};
     setBundleMode(prefix,true,[record,{}]);
   } else {
-    if(prefix==='e'&&loadRecords().some(r=>r.id===currentEditId&&r.bundleId)){
-      showToast('已儲存的拆帳請保留拆帳格式');return;
+    const data=prefix==='e'?loadRecords():[];
+    const source=data.find(r=>r.id===currentEditId);
+    const savedBundle=prefix==='e'&&source?.bundleId;
+    if(savedBundle){
+      const error=savedBundleCancellationError(data,source.bundleId);
+      if(error){showToast(error);return;}
+      if(!confirm('取消已儲存的拆帳會把所有項目合併為一筆，保留第一項類別，並清除各項分攤與代墊設定。確定嗎？')) return;
     }
-    if(!confirm('解除拆帳後，總金額會歸到第一個項目的類別；分攤與代墊需重新設定。確定嗎？')) return;
-    const first=document.querySelector(`#${prefix}-bundle-lines .bundle-line`);
-    ensureSelectOption(document.getElementById(`${prefix}-main`),first.querySelector('.bundle-main').value);
-    document.getElementById(`${prefix}-main`).value=first.querySelector('.bundle-main').value;
-    updateSubByMain(document.getElementById(`${prefix}-main`).value,document.getElementById(`${prefix}-sub`));
-    ensureSelectOption(document.getElementById(`${prefix}-sub`),first.querySelector('.bundle-sub').value);
-    document.getElementById(`${prefix}-sub`).value=first.querySelector('.bundle-sub').value;
-    document.getElementById(`${prefix}-advance-for`).value='';
-    if(prefix==='f') addSplit=null; else editSplit=null;
-    const scope=prefix==='f'?'#panel-add':'#edit-overlay';
-    document.querySelectorAll(`${scope} .split-opt`).forEach(btn=>btn.classList.toggle('active',btn.dataset.v==='null'));
-    document.getElementById(`${prefix}-custom-wrap`).style.display='none';
     setBundleMode(prefix,false);
+    const advanceFields=document.getElementById(`${prefix}-advance-fields`);
+    if(savedBundle){
+      const first=data.filter(r=>r.bundleId===source.bundleId).sort((a,b)=>a.bundleIndex-b.bundleIndex)[0];
+      const main=document.getElementById('e-main'),sub=document.getElementById('e-sub');
+      ensureSelectOption(main,first.main||''); main.value=first.main||'';
+      fillEditSubSelect(sub); ensureSelectOption(sub,first.sub||''); sub.value=first.sub||'';
+      document.getElementById('e-advance-for').value='';
+      editSplit=null;
+      document.querySelectorAll('#edit-overlay .split-opt').forEach(btn=>btn.classList.toggle('active',btn.dataset.v==='null'));
+      document.getElementById('e-custom-wrap').style.display='none';
+      setAdvanceFieldsExpanded('e',false);
+    } else setAdvanceFieldsExpanded(prefix,advanceFields.dataset.beforeBundleExpanded==='true');
   }
 }
 function collectBundleLines(prefix){
@@ -3429,7 +3449,14 @@ function saveEdit(){
     if(!isNaN(p)) updated.loanPrincipal=p; else delete updated.loanPrincipal;
     if(!isNaN(i)) updated.loanInterest=i; else delete updated.loanInterest;
   } else { delete updated.loanPrincipal; delete updated.loanInterest; }
-  data[idx]=updated; saveRecords(data);
+  if(data[idx].bundleId){
+    const error=savedBundleCancellationError(data,data[idx].bundleId);
+    if(error){showToast(error);return;}
+    const bundleId=data[idx].bundleId;
+    delete updated.bundleId;
+    delete updated.bundleIndex;
+    saveRecords([...data.filter(r=>r.bundleId!==bundleId),updated]);
+  } else {data[idx]=updated;saveRecords(data);}
   closeModal(); renderRecords(); updateHeaderSub(); showToast('✅ 已更新');
 }
 
@@ -5617,8 +5644,12 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.103';
+const APP_VERSION='2.104';
 const CHANGELOG=[
+  {version:'2.104',date:'2026-11-26',items:[
+    '拆帳按鈕再次點擊可取消，新增拆帳項目的女友分攤預設為我全部',
+    '已儲存拆帳可合併為單筆；有對應收款時會阻止合併',
+  ]},
   {version:'2.103',date:'2026-11-25',items:[
     '預設套用我的主題配色，報表 PDF 同步使用相同色系',
     '新增拆帳：單筆交易可記錄多個類別，各項分別設定女友分攤與代墊',

@@ -8,6 +8,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const groupSource = html.slice(html.indexOf('function transactionKey('), html.indexOf('function initSearchListeners()'));
 const lineSource = html.slice(html.indexOf('function collectBundleLines('), html.indexOf('function submitAdd()'));
 const reconcileSource = html.slice(html.indexOf('function updateBundleTotal('), html.indexOf('function removeBundleLine('));
+const cancellationSource = html.slice(html.indexOf('function savedBundleCancellationError('), html.indexOf('function toggleBundle('));
 
 function loadGroups() {
   const context = vm.createContext({Map, Set});
@@ -116,4 +117,17 @@ test('交易總金額與項目加總一致才能儲存', () => {
   const incomplete = reconcile('-500', ['-500', '-']);
   assert.equal(incomplete.status, '尚有未填項目');
   assert.match(incomplete.error, /請填完整/);
+});
+
+test('已儲存拆帳有對應收款時不能取消', () => {
+  const rows = [
+    {id: 'a', bundleId: 'group'},
+    {id: 'b', bundleId: 'group'},
+  ];
+  const context = vm.createContext({Set, gfSettlement: () => ({byId: {}})});
+  vm.runInContext(cancellationSource, context);
+  assert.equal(context.savedBundleCancellationError(rows, 'group'), '');
+  assert.match(context.savedBundleCancellationError([...rows, {advanceRepaymentFor: 'a'}], 'group'), /代墊收款/);
+  context.gfSettlement = () => ({byId: {b: {paid: 20}}});
+  assert.match(context.savedBundleCancellationError(rows, 'group'), /女友還款/);
 });
