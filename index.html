@@ -1603,7 +1603,6 @@ function advanceRemaining(r,data){
 function advanceReceiptError(receipt,target,data){
   if(!target||!target.advanceFor||target.amount>=0||target.id===receipt.id) return '找不到對應的代墊支出';
   if(receipt.amount<=0||receipt.advanceFor||receipt.split==='repay'||isCCMethod(receipt.method)) return '收款須為正數，且不可使用信用卡或女友已分攤';
-  if(receipt.date<target.date) return '收款日期不能早於代墊日期';
   const otherPaid=advanceRepayments(data,target.id).filter(r=>r.id!==receipt.id).reduce((s,r)=>s+r.amount,0);
   if(receipt.amount>Math.abs(target.amount)-otherPaid) return '收款金額超過這筆代墊的待收回金額';
   return '';
@@ -1621,12 +1620,11 @@ function toggleAdvanceFields(prefix){
 }
 function updateAdvanceFields(prefix,recordId=null,initialLink){
   const data=loadRecords();
-  const date=document.getElementById(`${prefix}-date`).value;
   const linkEl=document.getElementById(`${prefix}-advance-repayment-for`);
   const selected=initialLink===undefined?linkEl.value:initialLink;
   linkEl.replaceChildren();
   const blank=document.createElement('option'); blank.value=''; blank.textContent='不連結代墊'; linkEl.appendChild(blank);
-  const targets=data.filter(r=>r.advanceFor&&r.amount<0&&r.id!==recordId&&r.date<=date&&(advanceRemaining(r,data)>0||r.id===selected))
+  const targets=data.filter(r=>r.advanceFor&&r.amount<0&&r.id!==recordId&&(advanceRemaining(r,data)>0||r.id===selected))
     .sort((a,b)=>a.date.localeCompare(b.date));
   if(selected&&!targets.some(r=>r.id===selected)){
     const old=data.find(r=>r.id===selected);
@@ -3379,7 +3377,7 @@ function saveEdit(){
     for(const row of existing){
       const linked=advanceRepayments(data,row.id);
       const next=result.records.find(r=>r.id===row.id);
-      if(linked.length&&(!next||!next.advanceFor||linked.some(r=>r.date<document.getElementById('e-date').value)
+      if(linked.length&&(!next||!next.advanceFor
         ||linked.reduce((sum,r)=>sum+r.amount,0)>Math.abs(next.amount))){
         showToast('代墊項目已有收款，請先調整收款記錄');return;
       }
@@ -5644,8 +5642,11 @@ function showInputDialog(title,value=''){
 }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='2.104';
+const APP_VERSION='2.2026-11-27-105';
 const CHANGELOG=[
+  {version:'2.2026-11-27-105',date:'2026-11-27',items:[
+    '代墊收款可早於代墊支出，新增與編輯時都能連結',
+  ]},
   {version:'2.104',date:'2026-11-26',items:[
     '拆帳按鈕再次點擊可取消，新增拆帳項目的女友分攤預設為我全部',
     '已儲存拆帳可合併為單筆；有對應收款時會阻止合併',

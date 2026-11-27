@@ -63,9 +63,9 @@ expense-app-v2/
 
 IMPORTANT:
 
-Only perform release/version updates AFTER Vic explicitly says:
+Only perform release/version updates AFTER Vic explicitly says either:
 
-> 「完成此次升級」
+> 「完成此次升級」或「推上去」
 
 Before that:
 
@@ -89,15 +89,15 @@ Inside `sw.js`
 Format:
 
 ```js
-vic-v2-{number}
+vic-v2-YYYY-MM-DD-{number}
 ```
 
-Increment by 1 each release.
+Use the Taipei release date. Increment the trailing number by 1 for every release of this project; never reset it when the date changes.
 
 Example:
 
 ```txt
-vic-v2-1 → vic-v2-2
+vic-v2-104 → vic-v2-2026-11-26-105
 ```
 
 ---
@@ -106,19 +106,15 @@ vic-v2-1 → vic-v2-2
 
 Inside `index.html`
 
-Rules:
-
-* Small changes:
-  Increment patch version
+Format:
 
 ```txt
-2.0 → 2.1 → 2.2
+2.YYYY-MM-DD-{number}
 ```
 
-* Larger feature updates:
-  Increment minor version appropriately
+Keep the existing `2.` prefix. Use the Taipei release date and the same cumulative trailing number as the Service Worker cache. The number increases on every release, including multiple releases on the same day, and never resets at a date change.
 
-Use judgment based on change scope.
+Example: `2.104` → `2.2026-11-26-105` on the next release if it is published on that date.
 
 ---
 
@@ -130,7 +126,7 @@ Format:
 
 ```js
 {
-  version:'2.1',
+  version:'2.YYYY-MM-DD-{number}',
   date:'YYYY-MM-DD',
   items:[
     'Short description',
